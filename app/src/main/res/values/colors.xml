@@ -1,0 +1,18 @@
+<resources>
+    <color name="green_700">#009E4D</color>
+    <color name="green_900">#006400</color>
+    <color name="green_light">#E4FFF5</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <color name="bg_card">#FFFFFF</color>
+    <color name="input_bg">#FFFFFF</color>
+    <color name="bg_screen">#F5F7FA</color>
+
+    <color name="text_primary">#333333</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_hint">#999999</color>
+
+    <color name="icon_tint">#009E4D</color>
+
+</resources>

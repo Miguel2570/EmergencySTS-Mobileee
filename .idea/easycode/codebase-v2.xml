@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="com.obiscr.chatgpt.settings.EasyCodeState">
+    <option name="projectFiles" value="$PROJECT_DIR$/app/src/androidTest/java/pt/ipleiria/estg/dei/emergencysts/ExampleInstrumentedTest.java;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/app/src/main/java/pt/ipleiria/estg/dei/emergencysts/EnfermeiroActivity.java;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/app/src/main/java/pt/ipleiria/estg/dei/emergencysts/GradientView.java;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/app/src/main/java/pt/ipleiria/estg/dei/emergencysts/LoginActivity.java;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/app/src/main/java/pt/ipleiria/estg/dei/emergencysts/PacienteActivity.java;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/app/src/test/java/pt/ipleiria/estg/dei/emergencysts/ExampleUnitTest.java;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/app/build.gradle.kts;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/build.gradle.kts;C:/Users/Migue/Desktop/estg/2 ano/EmergencySTS-Mobile/settings.gradle.kts" />
+  </component>
+</project>

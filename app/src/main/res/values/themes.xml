@@ -1,0 +1,16 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 🔹 Tema base da aplicação -->
+    <style name="Base.Theme.EmergencySTS" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 🔹 Sem ActionBar (usamos Toolbar personalizada) -->
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+
+        <!-- 🔹 Cores principais -->
+        <item name="colorPrimary">@color/green_700</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+    </style>
+
+    <!-- 🔹 Tema principal -->
+    <style name="Theme.EmergencySTS" parent="Base.Theme.EmergencySTS" />
+</resources>

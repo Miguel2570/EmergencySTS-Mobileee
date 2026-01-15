@@ -1,0 +1,15 @@
+<resources>
+    <color name="green_700">#009E4D</color>
+    <color name="green_900">#006400</color>
+    <color name="green_light">#1E2824</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <color name="bg_card">#2D2D2D</color>
+    <color name="input_bg">#3D3D3D</color>
+    <color name="bg_screen">#F5F7FA</color>
+
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#CCCCCC</color>
+    <color name="text_hint">#AAAAAA</color>
+</resources>

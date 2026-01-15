@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Emergency STS</string>
+    <string name="login">Login</string>
+    <string name="nome_de_utilizador">Nome de utilizador</string>
+    <string name="digite_o_seu_utilizador">Digite o seu utilizador</string>
+    <string name="palavra_passe">Palavra-passe</string>
+    <string name="digite_a_sua_palavra_passe">Digite a sua palavra-passe</string>
+    <string name="emergency_sts">Emergency STS</string>
+    <string name="area_do_paciente">Área do Paciente</string>
+    <string name="ver_pulseira">Ver Pulseira</string>
+    <string name="ver_historico">Ver Histórico</string>
+    <string name="ver_perfil">Ver Perfil</string>
+    <string name="area_do_enfermeiro">Área do Enfermeiro</string>
+    <string name="historico_triagem">Histórico Triagem</string>
+    <string name="consultar_paciente">Consultar Paciente</string>
+    <string name="mostrar_pulseira">Mostrar Pulseiras</string>
+    <string name="pulseiras_pendentes">Pulseiras pendentes</string>
+    <string name="pacientes_em_espera">Pacientes em espera</string>
+    <string name="perfil">Ver Perfil</string>
+    <string name="digite_um_nif_para_pesquisar">Digite um NIF para pesquisar</string>
+    <string name="logout">Logout</string>
+    <string name="configura_o_da_api">Configuração da API</string>
+</resources>
