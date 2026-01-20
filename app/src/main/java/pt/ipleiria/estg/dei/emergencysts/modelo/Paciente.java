@@ -21,7 +21,6 @@ public class Paciente {
     }
 
 
-    //  CONSTRUTOR BÁSICO
     public Paciente(int userId, String username, String email, String role) {
         this.userId = userId;
         this.username = username;
@@ -29,7 +28,6 @@ public class Paciente {
         this.role = role;
     }
 
-    //  CONSTRUTOR COMPLETO
     public Paciente(int userId, String username, String email, String role,
                     String nome, String dataNascimento, String genero,
                     String telefone, String sns, String nif, String morada) {
@@ -45,7 +43,6 @@ public class Paciente {
         this.morada = morada;
     }
 
-    //  GETTERS
     public int getId() { return userId; }
     public String getUsername() { return username; }
     public String getEmail() { return email; }
@@ -58,7 +55,6 @@ public class Paciente {
     public String getNif() { return nif; }
     public String getMorada() { return morada; }
 
-    //  SETTERS
     public void setNome(String nome) { this.nome = nome; }
     public void setDataNascimento(String dataNascimento) { this.dataNascimento = dataNascimento; }
     public void setTelefone(String telefone) { this.telefone = telefone; }
@@ -69,7 +65,6 @@ public class Paciente {
     public void setGenero(String genero) { this.genero = genero; }
     public void setUserId(int userId) { this.userId = userId; }
 
-    //  Cálculo de idade
     public String getIdadeFormatada() {
         try {
             if (dataNascimento == null || dataNascimento.trim().isEmpty())

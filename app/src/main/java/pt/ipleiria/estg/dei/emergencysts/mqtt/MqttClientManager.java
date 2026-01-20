@@ -35,7 +35,7 @@ public class MqttClientManager {
     private MqttClient client;
     private Context context;
 
-    // NOVO: Variável para impedir múltiplas tentativas ao mesmo tempo
+    // Variável para impedir múltiplas tentativas ao mesmo tempo
     private boolean isConnecting = false;
 
     private MqttClientManager(Context context) {

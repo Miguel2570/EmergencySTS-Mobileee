@@ -44,10 +44,8 @@ public class EditarPerfilPacienteActivity extends AppCompatActivity {
         etSns = findViewById(R.id.etSns);
         progressBar = findViewById(R.id.progressBar);
 
-        // Preencher campos com dados atuais
         carregarDadosAtuais();
 
-        // Ações dos botões
         btnCancel.setOnClickListener(v -> finish());
         btnSaveBottom.setOnClickListener(v -> guardarAlteracoes());
     }
@@ -81,9 +79,8 @@ public class EditarPerfilPacienteActivity extends AppCompatActivity {
 
         final Paciente original = SharedPrefManager.getInstance(this).getPaciente();
 
-        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE + "/" + original.getId());
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE_PERFIL);
 
-        // POST com overriding para contornar problemas de PUT no servidor
         StringRequest request = new StringRequest(Request.Method.POST, url,
                 response -> {
                     progressBar.setVisibility(View.GONE);
@@ -106,21 +103,27 @@ public class EditarPerfilPacienteActivity extends AppCompatActivity {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
 
-                // Tenta enviar os dois formatos para garantir compatibilidade com Yii2
-                params.put("nome", etNome.getText().toString());
-                params.put("email", etEmail.getText().toString());
-                params.put("telefone", etTelefone.getText().toString());
-                params.put("morada", etMorada.getText().toString());
-                params.put("nif", etNif.getText().toString());
-                params.put("sns", etSns.getText().toString());
+                params.put("_method", "PUT");
 
-                // Formato Model[campo]
-                params.put("Enfermeiro[nome]", etNome.getText().toString());
-                params.put("Enfermeiro[email]", etEmail.getText().toString());
-                params.put("Enfermeiro[telefone]", etTelefone.getText().toString());
-                params.put("Enfermeiro[morada]", etMorada.getText().toString());
-                params.put("Enfermeiro[nif]", etNif.getText().toString());
-                params.put("Enfermeiro[sns]", etSns.getText().toString());
+                params.put("Paciente[nome]", nome);
+                params.put("Paciente[telefone]", telefone);
+                params.put("Paciente[morada]", morada);
+
+                if (!email.equalsIgnoreCase(original.getEmail())) {
+                    params.put("Paciente[email]", email);
+                }
+                if (!nif.equals(original.getNif())) {
+                    params.put("Paciente[nif]", nif);
+                }
+                if (!sns.equals(original.getSns())) {
+                    params.put("Paciente[sns]", sns);
+                }
+                if (original.getGenero() != null) {
+                    params.put("Paciente[genero]", original.getGenero());
+                }
+                if (original.getDataNascimento() != null) {
+                    params.put("Paciente[datanascimento]", original.getDataNascimento());
+                }
 
                 return params;
             }

@@ -17,9 +17,6 @@ public class Enfermeiro {
     private String morada;
 
 
-    // ---------------------------------------------------------
-    //  CONSTRUTOR BÁSICO
-    // ---------------------------------------------------------
     public Enfermeiro(int userId, String username, String email, String role) {
         this.userId = userId;
         this.username = username;
@@ -27,9 +24,6 @@ public class Enfermeiro {
         this.role = role;
     }
 
-    // ---------------------------------------------------------
-    //  CONSTRUTOR COMPLETO
-    // ---------------------------------------------------------
     public Enfermeiro(int userId, String username, String email, String role,
                       String nome, String dataNascimento,
                       String telefone, String sns, String nif, String morada) {
@@ -44,10 +38,6 @@ public class Enfermeiro {
         this.morada = morada;
     }
 
-
-    // ---------------------------------------------------------
-    //  GETTERS
-    // ---------------------------------------------------------
     public int getId() { return userId; }
     public String getUsername() { return username; }
     public String getEmail() { return email; }
@@ -61,9 +51,6 @@ public class Enfermeiro {
     public String getMorada() { return morada; }
 
 
-    // ---------------------------------------------------------
-    //  CALCULAR IDADE
-    // ---------------------------------------------------------
     public String getIdadeFormatada() {
 
         try {
@@ -96,10 +83,6 @@ public class Enfermeiro {
         }
     }
 
-
-    // ---------------------------------------------------------
-    //  SETTERS
-    // ---------------------------------------------------------
     public void setNome(String nome) { this.nome = nome; }
     public void setDataNascimento(String dataNascimento) { this.dataNascimento = dataNascimento; }
     public void setTelefone(String telefone) { this.telefone = telefone; }

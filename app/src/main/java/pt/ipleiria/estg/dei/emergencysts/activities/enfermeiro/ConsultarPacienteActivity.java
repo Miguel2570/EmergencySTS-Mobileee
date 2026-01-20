@@ -21,7 +21,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import pt.ipleiria.estg.dei.emergencysts.R;
-import pt.ipleiria.estg.dei.emergencysts.activities.enfermeiro.DetalhesPacienteActivity;
 import pt.ipleiria.estg.dei.emergencysts.modelo.Paciente;
 import pt.ipleiria.estg.dei.emergencysts.network.VolleySingleton;
 import pt.ipleiria.estg.dei.emergencysts.utils.PacienteJsonParser; // Import mais limpo
@@ -50,7 +49,6 @@ public class ConsultarPacienteActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> finish());
 
-        // Listener para detetar quando o utilizador acaba de escrever o NIF
         edtNif.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
@@ -70,7 +68,6 @@ public class ConsultarPacienteActivity extends AppCompatActivity {
     }
 
     private void searchPaciente(String nif) {
-        // 1. Verificação de Segurança: Há internet?
         if (!VolleySingleton.getInstance(this).isInternetConnection()) {
             Toast.makeText(this, "Sem ligação à Internet", Toast.LENGTH_SHORT).show();
             return;
@@ -79,11 +76,9 @@ public class ConsultarPacienteActivity extends AppCompatActivity {
         emptyState.setVisibility(View.GONE);
         resultCard.setVisibility(View.GONE);
 
-        // 2. Uso do Singleton para gerar o URL com Token
         String url = VolleySingleton.getInstance(this)
                 .getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE + "?nif=" + nif);
 
-        // Mantemos JsonArrayRequest porque a API devolve uma lista [...]
         JsonArrayRequest request = new JsonArrayRequest(
                 Request.Method.GET,
                 url,
@@ -102,7 +97,6 @@ public class ConsultarPacienteActivity extends AppCompatActivity {
         }
 
         try {
-            // Parser do primeiro elemento
             JSONObject jsonPaciente = array.getJSONObject(0);
             Paciente p = PacienteJsonParser.parserJsonPaciente(jsonPaciente);
 
@@ -118,7 +112,6 @@ public class ConsultarPacienteActivity extends AppCompatActivity {
                 // Configurar clique para detalhes
                 resultCard.setOnClickListener(v -> {
                     Intent intent = new Intent(ConsultarPacienteActivity.this, DetalhesPacienteActivity.class);
-                    // Passar dados individuais é mais seguro que passar o objeto inteiro (Parcelable)
                     intent.putExtra("nome", p.getNome());
                     intent.putExtra("nif", p.getNif());
                     intent.putExtra("sns", p.getSns());

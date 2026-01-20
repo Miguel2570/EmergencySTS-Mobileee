@@ -20,7 +20,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.Request;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONObject;
 
@@ -47,7 +46,6 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
     private MqttClientManager mqtt;
     private int pulseiraId = -1;
 
-    // --- RECEIVER DO MQTT ---
     private final BroadcastReceiver mqttReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context ctx, Intent intent) {
@@ -81,9 +79,7 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
         initViews();
         getTriagem();
 
-        // Inicializa o MQTT e subscreve os tópicos globais de atualização
         mqtt = MqttClientManager.getInstance(this);
-        // Usamos o wildcard # para ouvir todas as atualizações e filtrar no onReceive
         mqtt.subscribe("triagem/atualizada/#");
         mqtt.subscribe("pulseira/atualizada/#");
     }
@@ -216,7 +212,6 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Regista o receiver para ouvir mensagens do MQTT que o MqttClientManager envia via Broadcast
         IntentFilter filter = new IntentFilter("MQTT_MESSAGE");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(mqttReceiver, filter, Context.RECEIVER_NOT_EXPORTED);

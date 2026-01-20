@@ -11,7 +11,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import pt.ipleiria.estg.dei.emergencysts.R;
-import pt.ipleiria.estg.dei.emergencysts.activities.enfermeiro.EstatisticasActivity;
 import pt.ipleiria.estg.dei.emergencysts.activities.comum.HistoricoActivity;
 import pt.ipleiria.estg.dei.emergencysts.activities.comum.MostrarPulseirasActivity;
 import pt.ipleiria.estg.dei.emergencysts.mqtt.MqttClientManager;

@@ -51,7 +51,6 @@ public class Pulseira {
         this.medicacao = medicacao;
     }
 
-    // --- GETTERS ---
     public int getId() { return id; }
     public String getCodigo() { return codigo; }
     public String getPrioridade() { return prioridade; }

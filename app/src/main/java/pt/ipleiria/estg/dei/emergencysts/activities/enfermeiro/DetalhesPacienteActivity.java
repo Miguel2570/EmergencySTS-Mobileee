@@ -18,7 +18,6 @@ public class DetalhesPacienteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detalhes_paciente);
 
-        //Ligar elementos do XML
         btnBack    = findViewById(R.id.btnBack);
         tvNome     = findViewById(R.id.tvNome);
         tvNif      = findViewById(R.id.tvNif);

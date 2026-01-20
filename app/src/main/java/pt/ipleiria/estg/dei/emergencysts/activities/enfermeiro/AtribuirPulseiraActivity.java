@@ -69,10 +69,7 @@ public class AtribuirPulseiraActivity extends AppCompatActivity {
             return;
         }
 
-        // --- INICIALIZAÇÃO MQTT ---
-        // Agora o MqttClientManager utiliza internamente o user 'emergencysts' e a password definida
         mqtt = MqttClientManager.getInstance(this);
-        // Subscreve ao tópico específico desta pulseira para ouvir atualizações externas
         mqtt.subscribe("pulseira/atualizada/" + pulseiraId);
 
         carregarDadosTriagem();
@@ -141,7 +138,6 @@ public class AtribuirPulseiraActivity extends AppCompatActivity {
         String authKey = SharedPrefManager.getInstance(this).getKeyAccessToken();
         String url = baseUrl + "api/pulseira/" + pulseiraId + "?auth_key=" + authKey;
 
-        // Nota: O PHP deve estar configurado para disparar o MqttService::publish() após este PUT
         StringRequest request = new StringRequest(Request.Method.POST, url, // Método POST com _method=PUT para Volley/Yii2
                 response -> {
                     Toast.makeText(this, "Prioridade atribuída! O paciente será notificado.", Toast.LENGTH_LONG).show();

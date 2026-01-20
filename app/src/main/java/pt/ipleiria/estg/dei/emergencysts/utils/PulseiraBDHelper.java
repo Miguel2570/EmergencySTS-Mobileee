@@ -77,7 +77,7 @@ public class PulseiraBDHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    // --- MÉTODOS DE SINCRONIZAÇÃO (NOVO) ---
+    // --- MÉTODOS DE SINCRONIZAÇÃO ---
 
     public void sincronizarPulseiras(ArrayList<Pulseira> pulseiras) {
         SQLiteDatabase db = this.getWritableDatabase();

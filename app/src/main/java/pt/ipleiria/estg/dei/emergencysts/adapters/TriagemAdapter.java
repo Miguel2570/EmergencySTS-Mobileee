@@ -67,7 +67,6 @@ public class TriagemAdapter extends BaseAdapter {
 
         Triagem t = triagens.get(position);
 
-        // Preencher dados básicos (Usa os métodos auxiliares que já tens na Triagem)
         holder.tvNome.setText(t.getNomePaciente());
         holder.tvSNS.setText("SNS: " + t.getSnsPaciente());
 

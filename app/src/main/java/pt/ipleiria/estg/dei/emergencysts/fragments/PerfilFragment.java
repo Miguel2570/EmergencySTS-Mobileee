@@ -17,7 +17,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.android.volley.Request;
-import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 
 import org.json.JSONObject;
@@ -41,10 +40,8 @@ public class PerfilFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        //  Insuflar o layout
         View view = inflater.inflate(R.layout.fragment_perfil, container, false);
 
-        //  Ligar TODOS os componentes aos IDs do XML
         tvNome      = view.findViewById(R.id.tvNomeCompleto);
         tvEmail     = view.findViewById(R.id.tvEmail);
         tvDataNasc  = view.findViewById(R.id.tvDataNasc);
@@ -54,22 +51,17 @@ public class PerfilFragment extends Fragment {
         tvNif       = view.findViewById(R.id.tvNif);
         tvMorada    = view.findViewById(R.id.tvMorada);
 
-        // Botões
         btnLogout   = view.findViewById(R.id.btnLogout);
         btnBack     = view.findViewById(R.id.btnBack);
         btnSettings = view.findViewById(R.id.btnSettings);
         btnEditar   = view.findViewById(R.id.btnEditar);
 
-        //  CONFIGURAR OS CLIQUES
-
-        // Botão Editar
         if (btnEditar != null) {
             btnEditar.setOnClickListener(v -> {
                 if (getContext() == null) return;
                 String role = SharedPrefManager.getInstance(getContext()).getEnfermeiroBase().getRole();
                 Intent intent;
 
-                // Abre a atividade de edição consoante o tipo de utilizador
                 if (role != null && (role.equalsIgnoreCase("paciente") || role.equalsIgnoreCase("utente"))) {
                     intent = new Intent(getContext(), EditarPerfilPacienteActivity.class);
                 } else {
@@ -79,7 +71,6 @@ public class PerfilFragment extends Fragment {
             });
         }
 
-        // Botão Logout
         if (btnLogout != null) {
             btnLogout.setOnClickListener(v -> {
                 if (getContext() == null) return;
@@ -100,14 +91,12 @@ public class PerfilFragment extends Fragment {
             });
         }
 
-        // Botão Voltar
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
                 if (getActivity() != null) getActivity().finish();
             });
         }
 
-        // Botão Settings
         if (btnSettings != null) {
             btnSettings.setOnClickListener(v ->
                     startActivity(new Intent(getContext(), ConfigActivity.class))
@@ -128,7 +117,7 @@ public class PerfilFragment extends Fragment {
         if (role != null && (role.equalsIgnoreCase("paciente") || role.equalsIgnoreCase("utente"))) {
             carregarPerfilPaciente();
         } else {
-            // Caso contrário (enfermeiro ou admin)
+            // Caso contrário
             carregarPerfilEnfermeiro();
         }
     }
@@ -189,33 +178,26 @@ public class PerfilFragment extends Fragment {
     private void carregarPerfilPaciente() {
         if (getContext() == null) return;
 
-        // MUDANÇA IMPORTANTE: Endpoint específico do perfil do paciente
         String url = VolleySingleton .getInstance(getContext()).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE_PERFIL);
 
-        // MUDANÇA IMPORTANTE: JsonObjectRequest em vez de Array
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
                     if (getContext() == null) return;
                     try {
-                        // LOG PARA DEBUG: Vê o que aparece no Logcat com a tag "API_DEBUG"
                         Log.d("API_DEBUG", "Resposta Paciente: " + response.toString());
 
-                        // Verifica se os dados vêm dentro de "data" ou estão na raiz
                         JSONObject data = response.has("data") ? response.optJSONObject("data") : response;
                         if (data == null) data = response;
 
-                        // 2. Extrair dados do JSON (Tenta variações comuns de nomes)
                         int idPac     = data.optInt("id", 0);
                         String nome   = data.optString("nome", "---");
                         String email  = data.optString("email", "---");
 
-                        // Tenta ler "datanascimento" ou "data_nascimento"
                         String nasc = data.has("datanascimento") ? data.optString("datanascimento") : data.optString("data_nascimento", "---");
                         if (nasc.equals("null")) nasc = "---";
 
                         String tel    = data.optString("telefone", "---");
 
-                        // Tenta ler "sns", "numUtente" ou "numero_utente"
                         String sns = "---";
                         if (data.has("sns")) sns = data.optString("sns");
                         else if (data.has("numUtente")) sns = data.optString("numUtente");
@@ -224,10 +206,8 @@ public class PerfilFragment extends Fragment {
                         String nif    = data.optString("nif", "---");
                         String morada = data.optString("morada", "---");
 
-                        // Tenta ler "genero" ou "sexo"
                         String genero = data.has("genero") ? data.optString("genero", "M") : data.optString("sexo", "M");
 
-                        // 3. Atualizar a Interface (UI)
                         tvNome.setText(nome);
                         tvEmail.setText(email);
                         tvDataNasc.setText(nasc);
@@ -237,16 +217,13 @@ public class PerfilFragment extends Fragment {
                         tvMorada.setText(morada);
                         tvIdade.setText(calcularIdade(nasc) + " anos");
 
-                        // 4. Guardar no SharedPrefManager
                         Paciente stored = SharedPrefManager.getInstance(getContext()).getPaciente();
                         String username = SharedPrefManager.getInstance(getContext()).getEnfermeiroBase().getUsername();
 
-                        // Como Paciente não tem setId(), se o ID for novo, recriamos o objeto
                         if (stored == null || stored.getId() != idPac) {
                             stored = new Paciente(idPac, username, email, "paciente");
                         }
 
-                        // Atualizar restantes campos
                         stored.setNome(nome);
                         stored.setEmail(email);
                         stored.setDataNascimento(nasc);

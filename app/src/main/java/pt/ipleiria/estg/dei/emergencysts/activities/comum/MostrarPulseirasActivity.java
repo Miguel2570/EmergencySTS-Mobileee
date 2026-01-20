@@ -120,7 +120,6 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
         } catch (Exception ignored) {}
     }
 
-    // Receiver apenas para atualizar UI (sem criar notificações)
     private final BroadcastReceiver mqttReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context ctx, Intent intent) {

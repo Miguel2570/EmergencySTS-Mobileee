@@ -3,6 +3,7 @@ package pt.ipleiria.estg.dei.emergencysts.network;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -30,6 +31,7 @@ import pt.ipleiria.estg.dei.emergencysts.utils.PacienteJsonParser;
 import pt.ipleiria.estg.dei.emergencysts.utils.PulseiraBDHelper;
 import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
 import pt.ipleiria.estg.dei.emergencysts.utils.TriagemJsonParser;
+import pt.ipleiria.estg.dei.emergencysts.utils.UserJsonParser;
 
 // Listeners
 import pt.ipleiria.estg.dei.emergencysts.listeners.LoginListener;
@@ -41,9 +43,9 @@ public class VolleySingleton {
     // --- ENDPOINTS DA API ---
     public static final String ENDPOINT_LOGIN = "api/auth/login";
     public static final String ENDPOINT_PACIENTE = "api/paciente";
-    public static final String ENDPOINT_PACIENTE_PERFIL = "api/paciente/view-profile";
+    public static final String ENDPOINT_PACIENTE_PERFIL = "api/paciente/perfil";
     public static final String ENDPOINT_ENFERMEIRO = "api/enfermeiro";
-    public static final String ENDPOINT_ENFERMEIRO_PERFIL = "api/enfermeiro/view-profile";
+    public static final String ENDPOINT_ENFERMEIRO_PERFIL = "api/enfermeiro/perfil";
     public static final String ENDPOINT_TRIAGEM = "api/triagem";
     public static final String ENDPOINT_PULSEIRA = "api/pulseira";
     public static final String ENDPOINT_TOTAL_USERS = "api/users/total";
@@ -87,9 +89,6 @@ public class VolleySingleton {
     public void setPacienteListener(PacienteListener listener) { this.pacienteListener = listener; }
     public void setTriagemListener(TriagemListener listener) { this.triagemListener = listener; }
 
-    // --------------------------------------------------------------------------------
-    // 1. LOGIN API (ATUALIZADO PARA PASSAR A ROLE)
-    // --------------------------------------------------------------------------------
     public void loginAPI(final String username, final String password) {
         if (!isInternetConnection()) {
             Toast.makeText(ctx, "Sem ligação à Internet", Toast.LENGTH_SHORT).show();
@@ -105,46 +104,55 @@ public class VolleySingleton {
                         JSONObject json = new JSONObject(response);
                         String token = "";
 
-                        // 1. EXTRAIR TOKEN
+                        // ==================================================================
+                        // 1. EXTRAÇÃO ROBUSTA DO TOKEN (CORREÇÃO AQUI)
+                        // ==================================================================
+
+                        // A) Tenta na raiz do JSON
                         if (!json.isNull("auth_key")) token = json.optString("auth_key");
                         if (token.isEmpty() && !json.isNull("access_token")) token = json.optString("access_token");
+                        if (token.isEmpty() && !json.isNull("token")) token = json.optString("token");
 
+                        // B) Tenta dentro do objeto 'data' (Onde geralmente vem no Yii2/PHP)
                         if (token.isEmpty() && json.has("data")) {
                             JSONObject data = json.optJSONObject("data");
-                            if (data != null && !data.isNull("auth_key")) token = data.optString("auth_key");
+                            if (data != null) {
+                                if (!data.isNull("token")) token = data.optString("token"); // O mais comum
+                                if (token.isEmpty() && !data.isNull("access_token")) token = data.optString("access_token");
+                                if (token.isEmpty() && !data.isNull("auth_key")) token = data.optString("auth_key");
+                            }
                         }
 
                         if (!token.isEmpty()) {
-                            // 2. EXTRAIR DADOS BÁSICOS
+                            // 2. EXTRAIR DADOS DO UTILIZADOR
                             int id = -1;
                             String role = "Enfermeiro"; // Default
                             String email = "";
 
+                            // Procura na raiz
                             id = json.optInt("id", json.optInt("user_id", -1));
                             role = json.optString("role", role);
                             email = json.optString("email", "");
 
+                            // Procura dentro de 'data' (prioritário)
                             if (json.has("data")) {
                                 JSONObject data = json.optJSONObject("data");
                                 if (data != null) {
-                                    if(data.has("id")) id = data.optInt("id");
-                                    if(data.has("role")) role = data.optString("role");
-                                    if(data.has("email")) email = data.optString("email");
+                                    // Tenta 'user_id' ou 'id'
+                                    int newId = data.optInt("user_id", -1);
+                                    if (newId == -1) newId = data.optInt("id", -1);
+                                    if (newId != -1) id = newId;
+
+                                    if (data.has("role")) role = data.optString("role");
+                                    if (data.has("email")) email = data.optString("email");
                                 }
                             }
 
-                            // 3. GUARDAR TUDO
+                            // 3. GUARDAR SESSÃO
                             Enfermeiro userBase = new Enfermeiro(id, username, email, role);
                             SharedPrefManager.getInstance(ctx).userLogin(userBase, token);
 
-                            // -----------------------------------------------------------
-                            // MUDANÇA PRINCIPAL: Passamos 'role' como 3º argumento
-                            // -----------------------------------------------------------
-                            if (loginListener != null) {
-                                loginListener.onValidateLogin(token, username, role);
-                            }
-
-                            // 4. PEDIR O PERFIL EM "BACKGROUND"
+                            // Carregar perfil em background
                             if (role.equalsIgnoreCase("paciente") || role.equalsIgnoreCase("utente")) {
                                 getPacientePerfilAPI(token, username);
                             } else {
@@ -152,20 +160,22 @@ public class VolleySingleton {
                             }
 
                         } else {
-                            String errorMsg = json.optString("message", "Token não recebido.");
+                            // Se o token continuar vazio após todas as tentativas
+                            String errorMsg = json.optString("message", "Erro: Token não encontrado na resposta.");
                             if (loginListener != null) loginListener.onLoginError(errorMsg);
                         }
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        if (loginListener != null) loginListener.onLoginError("Erro JSON: " + e.getMessage());
+                        if (loginListener != null) loginListener.onLoginError("Erro ao processar JSON: " + e.getMessage());
                     }
                 },
                 error -> {
                     if (loginListener != null) {
                         String msg = "Erro de conexão";
-                        if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
-                            msg = "Dados incorretos";
+                        if (error.networkResponse != null) {
+                            msg = "Erro Servidor: " + error.networkResponse.statusCode;
+                            if (error.networkResponse.statusCode == 401) msg = "Credenciais Inválidas";
                         }
                         loginListener.onLoginError(msg);
                     }
@@ -180,12 +190,18 @@ public class VolleySingleton {
                 params.put("LoginForm[password]", password);
                 return params;
             }
+
+            @Override
+            public String getBodyContentType() {
+                return "application/x-www-form-urlencoded; charset=UTF-8";
+            }
         };
+
         addToRequestQueue(req);
     }
 
     // --------------------------------------------------------------------------------
-    // 2. MÉTODOS DE PERFIL (Também atualizados para passar a role)
+    // 2. MÉTODOS DE PERFIL
     // --------------------------------------------------------------------------------
 
     private void getEnfermeiroPerfilAPI(String token, String username) {
@@ -196,6 +212,7 @@ public class VolleySingleton {
                     try {
                         Enfermeiro enf = SharedPrefManager.getInstance(ctx).getEnfermeiroBase();
 
+                        // Atualiza dados extra
                         enf.setNome(response.optString("nome", username));
                         enf.setNif(response.optString("nif", ""));
                         enf.setTelefone(response.optString("telefone", ""));
@@ -205,18 +222,19 @@ public class VolleySingleton {
 
                         SharedPrefManager.getInstance(ctx).saveEnfermeiro(enf);
 
-                        // Atualização aqui também (passamos a role do objeto)
+                        // SUCESSO: Navegar
                         if (loginListener != null) loginListener.onValidateLogin(token, username, enf.getRole());
 
                     } catch (Exception e) {
-                        // Se der erro, tentamos passar a role que temos guardada
-                        String roleGuardada = SharedPrefManager.getInstance(ctx).getEnfermeiroBase().getRole();
-                        if (loginListener != null) loginListener.onValidateLogin(token, username, roleGuardada);
+                        // Se falhar o perfil, usa os dados básicos do login
+                        String role = SharedPrefManager.getInstance(ctx).getEnfermeiroBase().getRole();
+                        if (loginListener != null) loginListener.onValidateLogin(token, username, role);
                     }
                 },
                 error -> {
-                    String roleGuardada = SharedPrefManager.getInstance(ctx).getEnfermeiroBase().getRole();
-                    if (loginListener != null) loginListener.onValidateLogin(token, username, roleGuardada);
+                    // Se der erro de rede ao buscar perfil, navega na mesma com os dados básicos
+                    String role = SharedPrefManager.getInstance(ctx).getEnfermeiroBase().getRole();
+                    if (loginListener != null) loginListener.onValidateLogin(token, username, role);
                 }
         ) {
             @Override
@@ -247,17 +265,17 @@ public class VolleySingleton {
 
                         SharedPrefManager.getInstance(ctx).savePaciente(pac);
 
-                        // Atualização aqui também
+                        // SUCESSO: Navegar
                         if (loginListener != null) loginListener.onValidateLogin(token, username, pac.getRole());
 
                     } catch (Exception e) {
-                        String roleGuardada = SharedPrefManager.getInstance(ctx).getPacienteBase().getRole();
-                        if (loginListener != null) loginListener.onValidateLogin(token, username, roleGuardada);
+                        String role = SharedPrefManager.getInstance(ctx).getPacienteBase().getRole();
+                        if (loginListener != null) loginListener.onValidateLogin(token, username, role);
                     }
                 },
                 error -> {
-                    String roleGuardada = SharedPrefManager.getInstance(ctx).getPacienteBase().getRole();
-                    if (loginListener != null) loginListener.onValidateLogin(token, username, roleGuardada);
+                    String role = SharedPrefManager.getInstance(ctx).getPacienteBase().getRole();
+                    if (loginListener != null) loginListener.onValidateLogin(token, username, role);
                 }
         ) {
             @Override

@@ -24,21 +24,17 @@ public class ConfigActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_config);
 
-        // Carregar tema e preferências
         SharedPrefManager pref = SharedPrefManager.getInstance(this);
         int savedTheme = pref.getTheme();
         AppCompatDelegate.setDefaultNightMode(savedTheme);
 
-        // Inicializar Views
         editServerIp = findViewById(R.id.editServerIp);
         editApiPath  = findViewById(R.id.editApiPath);
         btnSave      = findViewById(R.id.btnSave);
         switchDarkMode = findViewById(R.id.switchDarkMode);
 
-        // Configurar estado do Switch
         switchDarkMode.setChecked(savedTheme == AppCompatDelegate.MODE_NIGHT_YES);
 
-        // Preencher campos com valores atuais (ou default)
         editServerIp.setText(pref.getServerBase());
         editApiPath.setText(pref.getApiPath());
 
@@ -72,14 +68,12 @@ public class ConfigActivity extends AppCompatActivity {
 
             Toast.makeText(this, "Configuração Atualizada!", Toast.LENGTH_SHORT).show();
 
-            // 6. Voltar ao Login (Limpando a stack para forçar recarregamento)
             Intent i = new Intent(ConfigActivity.this, LoginActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(i);
             finish();
         });
 
-        // Lógica do Tema Escuro
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);

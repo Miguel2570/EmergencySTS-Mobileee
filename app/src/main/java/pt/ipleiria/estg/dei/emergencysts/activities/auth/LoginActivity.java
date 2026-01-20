@@ -28,27 +28,23 @@ public class LoginActivity extends AppCompatActivity implements LoginListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // Se já tem login guardado, valida e navega diretamente
         if (SharedPrefManager.getInstance(this).isLoggedIn()) {
-            checkRoleAndNavigate();
+            Enfermeiro user = SharedPrefManager.getInstance(this).getEnfermeiroBase();
+            String savedRole = (user != null) ? user.getRole() : "Enfermeiro";
+            navegarParaActivity(savedRole);
             return;
         }
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
-        ImageView btnConfig = findViewById(R.id.btnAtras); // Assumi que o ID da roda dentada é btnAtras ou btnConfig
+        ImageView btnConfig = findViewById(R.id.btnAtras);
 
-        // Registar o listener (Importante fazer isto também no onResume)
         VolleySingleton.getInstance(this).setLoginListener(this);
 
         btnLogin.setOnClickListener(v -> loginUser());
 
-        btnConfig.setOnClickListener(v -> {
-            Intent i = new Intent(LoginActivity.this, ConfigActivity.class);
-            startActivity(i);
-            // Não fazemos finish() aqui para o user poder voltar ao login com o botão back do telemóvel
-        });
+        btnConfig.setOnClickListener(v -> startActivity(new Intent(this, ConfigActivity.class)));
     }
 
     @Override
@@ -62,19 +58,13 @@ public class LoginActivity extends AppCompatActivity implements LoginListener {
         String password = etPassword.getText().toString().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            etUsername.setError("Preencha este campo");
+            etUsername.setError("Preencha tudo");
             return;
         }
 
-        if (!SharedPrefManager.getInstance(this).hasServerConfigured()) {
-            Toast.makeText(this, "Configure o IP do servidor primeiro!", Toast.LENGTH_LONG).show();
-            startActivity(new Intent(this, ConfigActivity.class));
-            return;
-        }
-
-        // Bloquear botão para evitar cliques múltiplos
+        // Bloquear botão
         btnLogin.setEnabled(false);
-        btnLogin.setText("A entrar...");
+        btnLogin.setText("A verificar...");
 
         VolleySingleton.getInstance(this).loginAPI(username, password);
     }
@@ -82,45 +72,45 @@ public class LoginActivity extends AppCompatActivity implements LoginListener {
     @Override
     public void onValidateLogin(String token, String username, String role) {
         btnLogin.setEnabled(true);
-        btnLogin.setText("Login"); // Repor texto original
-        Toast.makeText(this, "Bem-vindo, " + username, Toast.LENGTH_SHORT).show();
+        btnLogin.setText("Login");
 
-        checkRoleAndNavigate();
+        Toast.makeText(this, "Bem-vindo " + username, Toast.LENGTH_SHORT).show();
+        navegarParaActivity(role);
     }
 
     @Override
     public void onLoginError(String error) {
-        // Erro!
         btnLogin.setEnabled(true);
-        btnLogin.setText("Login"); // Repor texto original
-
+        btnLogin.setText("Login");
         Toast.makeText(this, error, Toast.LENGTH_LONG).show();
     }
 
-    private void checkRoleAndNavigate() {
-        MqttClientManager.getInstance(this).connect();
-
-        Enfermeiro user = SharedPrefManager.getInstance(this).getEnfermeiroBase();
-
-        if (user == null) {
-            SharedPrefManager.getInstance(this).logout();
-            return;
+    private void navegarParaActivity(String rawRole) {
+        try {
+            MqttClientManager.getInstance(this).connect();
+        } catch (Exception e)
+        {
+            e.printStackTrace();
         }
 
-        String role = user.getRole();
-        if(role == null) role = "";
+        String role = (rawRole == null) ? "Enfermeiro" : rawRole.trim();
 
-        if (role.equalsIgnoreCase("medico")) {
-            SharedPrefManager.getInstance(this).logout();
-            MqttClientManager.getInstance(this).disconnect();
-            Toast.makeText(this, "Médicos devem usar a plataforma Web.", Toast.LENGTH_LONG).show();
-            return;
-        }
+        System.out.println(">>> A NAVEGAR PARA ROLE: " + role);
 
         Intent intent;
+
         if (role.equalsIgnoreCase("paciente") || role.equalsIgnoreCase("utente")) {
+            // Se for paciente
             intent = new Intent(this, PacienteActivity.class);
-        } else {
+        }
+        else if (role.equalsIgnoreCase("medico")) {
+            // Se for médico (bloqueia)
+            SharedPrefManager.getInstance(this).logout();
+            Toast.makeText(this, "Médicos: usem a Web.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        else {
+            // Se for Enfermeiro, Admin, Administrador, ou qualquer outra coisa -> Vai para Enfermeiro
             intent = new Intent(this, EnfermeiroActivity.class);
         }
 

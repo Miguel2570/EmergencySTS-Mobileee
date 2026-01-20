@@ -76,14 +76,12 @@ public class HistoricoActivity extends AppCompatActivity implements TriagemListe
     @Override
     protected void onResume() {
         super.onResume();
-        // Garante que o listener está ativo ao voltar a esta activity
         VolleySingleton.getInstance(this).setTriagemListener(this);
         carregarHistorico();
     }
 
     private void carregarHistorico() {
         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(true);
-        // Toda a lógica foi movida para o Singleton!
         VolleySingleton.getInstance(this).getHistoricoTriagensAPI(isPaciente);
     }
 

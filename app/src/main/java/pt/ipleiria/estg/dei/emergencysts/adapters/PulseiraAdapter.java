@@ -67,7 +67,6 @@ public class PulseiraAdapter extends BaseAdapter {
 
         holder.tvSNS.setText("SNS: " + (pulseira.getSns() != null ? pulseira.getSns() : "---"));
 
-        // CORREÇÃO: Usar getDataEntrada() em vez de getHora()
         holder.tvHora.setText(pulseira.getDataEntrada() != null ? pulseira.getDataEntrada() : "--:--");
 
         // STATUS E CORES

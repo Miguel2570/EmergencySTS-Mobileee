@@ -71,7 +71,6 @@ public class PacienteActivity extends AppCompatActivity {
         }
     }
 
-    // MQTT deve ser garantido aqui
     @Override
     protected void onResume() {
         super.onResume();

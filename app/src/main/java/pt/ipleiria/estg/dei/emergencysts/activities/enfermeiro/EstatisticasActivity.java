@@ -85,7 +85,7 @@ public class EstatisticasActivity extends AppCompatActivity {
                     }
                 }
         ) {
-            // 🔹 Adiciona o Token de Autenticação no Cabeçalho
+            //Adiciona o Token de Autenticação no Cabeçalho
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String, String> headers = new HashMap<>();

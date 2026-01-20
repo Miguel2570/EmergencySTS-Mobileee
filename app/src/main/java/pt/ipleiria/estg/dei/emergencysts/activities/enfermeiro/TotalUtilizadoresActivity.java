@@ -17,7 +17,6 @@ import java.util.ArrayList;
 
 import pt.ipleiria.estg.dei.emergencysts.R;
 import pt.ipleiria.estg.dei.emergencysts.network.VolleySingleton;
-import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
 
 public class TotalUtilizadoresActivity extends AppCompatActivity {
 
