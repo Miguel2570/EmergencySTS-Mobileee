@@ -23,6 +23,8 @@ public class EnfermeiroActivity extends AppCompatActivity {
     private CardView cardHistoricoTriagem;
     private CardView cardPerfil;
     private CardView cardEstatisticas;
+    private CardView cardTotalUtilizadores;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +36,7 @@ public class EnfermeiroActivity extends AppCompatActivity {
         cardHistoricoTriagem = findViewById(R.id.cardHistoricoTriagem);
         cardPerfil = findViewById(R.id.cardPerfil);
         cardEstatisticas = findViewById(R.id.cardEstatisticas);
+        cardTotalUtilizadores = findViewById(R.id.cardTotalUtilizadores);
 
         cardMostrarPulseira.setOnClickListener(v ->
                 startActivity(new Intent(this, MostrarPulseirasActivity.class))
@@ -52,6 +55,9 @@ public class EnfermeiroActivity extends AppCompatActivity {
         );
         cardEstatisticas.setOnClickListener(v ->
                 startActivity(new Intent(this, EstatisticasActivity.class))
+        );
+        cardTotalUtilizadores.setOnClickListener(v ->
+                startActivity(new Intent(this, TotalUtilizadoresActivity.class))
         );
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {

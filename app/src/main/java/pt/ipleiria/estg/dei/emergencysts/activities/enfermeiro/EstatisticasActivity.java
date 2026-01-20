@@ -50,10 +50,6 @@ public class EstatisticasActivity extends AppCompatActivity {
         String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
         String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
 
-
-        // 🔹 Rota ajustada para a ação que criámos no PHP
-        // Nota: O Yii2 pode usar 'users' ou 'user' dependendo da config.
-        // Se 'user/total' não der, tenta 'users/total'.
         String url = baseUrl + "api/user/total" + "?auth_key=" + token;
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
