@@ -7,77 +7,86 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.SwitchCompat;
 
 import pt.ipleiria.estg.dei.emergencysts.R;
 import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.widget.SwitchCompat;
 
 public class ConfigActivity extends AppCompatActivity {
 
     private EditText editServerIp, editApiPath;
     private Button btnSave;
+    private SwitchCompat switchDarkMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_config);
 
-        int savedTheme = SharedPrefManager.getInstance(this).getTheme();
-        AppCompatDelegate.setDefaultNightMode(savedTheme);
+        // Carregar tema e preferências
         SharedPrefManager pref = SharedPrefManager.getInstance(this);
+        int savedTheme = pref.getTheme();
+        AppCompatDelegate.setDefaultNightMode(savedTheme);
 
-        // Ligação aos campos
+        // Inicializar Views
         editServerIp = findViewById(R.id.editServerIp);
         editApiPath  = findViewById(R.id.editApiPath);
         btnSave      = findViewById(R.id.btnSave);
-        SwitchCompat switchDarkMode = findViewById(R.id.switchDarkMode);
+        switchDarkMode = findViewById(R.id.switchDarkMode);
 
-        if (savedTheme == AppCompatDelegate.MODE_NIGHT_YES) {
-            switchDarkMode.setChecked(true);
-        } else {
-            switchDarkMode.setChecked(false);
-        }
+        // Configurar estado do Switch
+        switchDarkMode.setChecked(savedTheme == AppCompatDelegate.MODE_NIGHT_YES);
 
-        // Preencher valores guardados
+        // Preencher campos com valores atuais (ou default)
         editServerIp.setText(pref.getServerBase());
-        editApiPath.setText(pref.getApiPath()); // já tem valor por defeito
+        editApiPath.setText(pref.getApiPath());
 
-
-        // Guardar dados
         btnSave.setOnClickListener(v -> {
-
             String base = editServerIp.getText().toString().trim();
             String path = editApiPath.getText().toString().trim();
 
-            if (!base.startsWith("http")) {
-                editServerIp.setError("O URL deve começar por http:// ou https://");
+            if (base.isEmpty()) {
+                editServerIp.setError("Por favor, escreva o IP (ex: 10.0.2.2 ou o ip do servidor)");
                 return;
             }
 
-            // Guarda valores
+            if (!base.startsWith("http://") && !base.startsWith("https://")) {
+                base = "http://" + base;
+            }
+
+            if (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
+
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }
+            if (!path.endsWith("/")) {
+                path = path + "/";
+            }
+
+            // 5. Gravar
             pref.setServerBase(base);
             pref.setApiPath(path);
 
-            Toast.makeText(this, "Configuração guardada!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Configuração Atualizada!", Toast.LENGTH_SHORT).show();
 
-            //Inicia login
+            // 6. Voltar ao Login (Limpando a stack para forçar recarregamento)
             Intent i = new Intent(ConfigActivity.this, LoginActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(i);
-            finish(); // Fecha a ConfigActivity
+            finish();
         });
 
+        // Lógica do Tema Escuro
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            SharedPrefManager prefManager = SharedPrefManager.getInstance(ConfigActivity.this);
-
             if (isChecked) {
-                // Ativar Escuro
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                prefManager.saveTheme(AppCompatDelegate.MODE_NIGHT_YES);
+                pref.saveTheme(AppCompatDelegate.MODE_NIGHT_YES);
             } else {
-                // Ativar Claro
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                prefManager.saveTheme(AppCompatDelegate.MODE_NIGHT_NO);
+                pref.saveTheme(AppCompatDelegate.MODE_NIGHT_NO);
             }
         });
     }

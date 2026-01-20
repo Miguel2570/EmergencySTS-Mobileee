@@ -9,17 +9,16 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-// NOTA: Os imports do Volley e JSON desapareceram daqui!
 import pt.ipleiria.estg.dei.emergencysts.R;
 import pt.ipleiria.estg.dei.emergencysts.activities.enfermeiro.EnfermeiroActivity;
 import pt.ipleiria.estg.dei.emergencysts.activities.paciente.PacienteActivity;
-import pt.ipleiria.estg.dei.emergencysts.listeners.LoginListener; // A tua nova interface
+import pt.ipleiria.estg.dei.emergencysts.listeners.LoginListener;
 import pt.ipleiria.estg.dei.emergencysts.modelo.Enfermeiro;
 import pt.ipleiria.estg.dei.emergencysts.mqtt.MqttClientManager;
 import pt.ipleiria.estg.dei.emergencysts.network.VolleySingleton;
 import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
 
-public class LoginActivity extends AppCompatActivity implements LoginListener { // 1. Implementa a Interface
+public class LoginActivity extends AppCompatActivity implements LoginListener {
 
     private EditText etUsername, etPassword;
     private Button btnLogin;
@@ -29,96 +28,97 @@ public class LoginActivity extends AppCompatActivity implements LoginListener { 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // 2. Define esta Activity como quem vai "ouvir" a resposta do Singleton
-        VolleySingleton.getInstance(this).setLoginListener(this);
-
-        // --- VERIFICAÇÃO AUTOMÁTICA ---
-        // Se já tem login guardado, valida e navega
+        // Se já tem login guardado, valida e navega diretamente
         if (SharedPrefManager.getInstance(this).isLoggedIn()) {
             checkRoleAndNavigate();
-            return; // Impede que o resto do onCreate corra se já vamos sair
+            return;
         }
 
-        // --- UI ---
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
-        ImageView btnBack = findViewById(R.id.btnAtras);
+        ImageView btnConfig = findViewById(R.id.btnAtras); // Assumi que o ID da roda dentada é btnAtras ou btnConfig
+
+        // Registar o listener (Importante fazer isto também no onResume)
+        VolleySingleton.getInstance(this).setLoginListener(this);
 
         btnLogin.setOnClickListener(v -> loginUser());
 
-        btnBack.setOnClickListener(v -> {
+        btnConfig.setOnClickListener(v -> {
             Intent i = new Intent(LoginActivity.this, ConfigActivity.class);
             startActivity(i);
-            finish();
+            // Não fazemos finish() aqui para o user poder voltar ao login com o botão back do telemóvel
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        VolleySingleton.getInstance(this).setLoginListener(this);
     }
 
     private void loginUser() {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        // Validações de Interface
         if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show();
+            etUsername.setError("Preencha este campo");
             return;
         }
 
         if (!SharedPrefManager.getInstance(this).hasServerConfigured()) {
-            Toast.makeText(this, "Vai às configurações e mete o IP!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Configure o IP do servidor primeiro!", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(this, ConfigActivity.class));
             return;
         }
 
-        // 3. CHAMADA SIMPLES AO SINGLETON
-        // Toda a lógica de Volley, JSON e SharedParams foi movida para lá
+        // Bloquear botão para evitar cliques múltiplos
+        btnLogin.setEnabled(false);
+        btnLogin.setText("A entrar...");
+
         VolleySingleton.getInstance(this).loginAPI(username, password);
     }
 
-    // ==========================================================
-    // MÉTODOS DA INTERFACE LOGINLISTENER (Respostas do Singleton)
-    // ==========================================================
-
     @Override
-    public void onValidateLogin(String token, String username) {
-        // Se este método foi chamado, o Singleton JÁ guardou o user no SharedPrefManager com sucesso.
-        Toast.makeText(this, "Login efetuado!", Toast.LENGTH_SHORT).show();
+    public void onValidateLogin(String token, String username, String role) {
+        btnLogin.setEnabled(true);
+        btnLogin.setText("Login"); // Repor texto original
+        Toast.makeText(this, "Bem-vindo, " + username, Toast.LENGTH_SHORT).show();
 
-        // Agora só precisamos de ver a Role e mudar de ecrã
         checkRoleAndNavigate();
     }
 
     @Override
     public void onLoginError(String error) {
-        // Se falhou (senha errada ou erro de rede), mostramos a mensagem
+        // Erro!
+        btnLogin.setEnabled(true);
+        btnLogin.setText("Login"); // Repor texto original
+
         Toast.makeText(this, error, Toast.LENGTH_LONG).show();
     }
 
-    // ==========================================================
-    // MÉTODOS AUXILIARES
-    // ==========================================================
-
     private void checkRoleAndNavigate() {
-        // 1. Ligar ao MQTT (fundamental estar conectado para receber notificações)
         MqttClientManager.getInstance(this).connect();
 
-        // 2. Obter dados do user guardado
         Enfermeiro user = SharedPrefManager.getInstance(this).getEnfermeiroBase();
 
-        if (user == null) return; // Segurança
-
-        String role = user.getRole();
-
-        // 3. Verificar Regras de Acesso (Ex: Barrar Médicos)
-        if (role != null && role.equalsIgnoreCase("medico")) {
+        if (user == null) {
             SharedPrefManager.getInstance(this).logout();
-            MqttClientManager.getInstance(this).disconnect(); // Desligar se conectou
-            Toast.makeText(this, "Acesso Médico disponível apenas na Web.", Toast.LENGTH_LONG).show();
             return;
         }
 
-        // 4. Navegação
+        String role = user.getRole();
+        if(role == null) role = "";
+
+        if (role.equalsIgnoreCase("medico")) {
+            SharedPrefManager.getInstance(this).logout();
+            MqttClientManager.getInstance(this).disconnect();
+            Toast.makeText(this, "Médicos devem usar a plataforma Web.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         Intent intent;
-        if (role != null && (role.equalsIgnoreCase("paciente") || role.equalsIgnoreCase("utente"))) {
+        if (role.equalsIgnoreCase("paciente") || role.equalsIgnoreCase("utente")) {
             intent = new Intent(this, PacienteActivity.class);
         } else {
             intent = new Intent(this, EnfermeiroActivity.class);
