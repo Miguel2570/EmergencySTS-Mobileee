@@ -40,12 +40,6 @@ public class TotalUtilizadoresActivity extends AppCompatActivity {
     }
 
     private void carregarUtilizadores() {
-
-        if (!VolleySingleton.getInstance(this).isInternetConnection()) {
-            tvTotalUsers.setText("Offline");
-            Toast.makeText(this, "Sem ligação à Internet", Toast.LENGTH_SHORT).show();
-            return;
-        }
         
         String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE);
 
@@ -63,10 +57,13 @@ public class TotalUtilizadoresActivity extends AppCompatActivity {
                         listaUtilizadores.add(user);
                     }
 
+                    // Obtemos o total real da lista
                     int total = listaUtilizadores.size();
-                    tvTotalUsers.setText(String.valueOf(total));
+
+                    tvTotalUsers.setText("Existem um total de " + total + " pacientes");
+
                 } else {
-                    tvTotalUsers.setText("0");
+                    tvTotalUsers.setText("Existem um total de 0 pacientes");
                 }
 
             } catch (Exception e) {
