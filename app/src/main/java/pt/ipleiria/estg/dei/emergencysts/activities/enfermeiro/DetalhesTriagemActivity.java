@@ -41,7 +41,6 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
     private View dotPrioridade;
 
     private LinearLayout layoutBotoes;
-    // REMOVIDO: btnArquivar
     private Button btnEliminar;
 
     private int triagemId;
@@ -109,7 +108,6 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
         layoutBotoes = findViewById(R.id.layoutBotoesAcao);
-        // REMOVIDO: Inicialização do btnArquivar
         btnEliminar = findViewById(R.id.btnEliminar);
 
         String role = SharedPrefManager.getInstance(this).getKeyRole();
@@ -196,7 +194,6 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
                 .show();
     }
 
-    // Método renomeado e simplificado (sem lógica de arquivar)
     private void eliminarTriagemAPI() {
         String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_TRIAGEM + "/" + triagemId + "?expand=userprofile,pulseira");
 

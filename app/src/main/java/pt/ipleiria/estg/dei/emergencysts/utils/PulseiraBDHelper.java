@@ -14,24 +14,19 @@ public class PulseiraBDHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "emergencysts.db";
     private static final int DB_VERSION = 3;
-
     private static final String TABLE_PULSEIRA = "pulseiras";
 
-    // Colunas
+    // --- COLUNAS ---
     private static final String COL_ID = "id";
-    private static final String COL_CODIGO = "codigo"; // Novo
+    private static final String COL_CODIGO = "codigo";
     private static final String COL_PRIORIDADE = "prioridade";
     private static final String COL_STATUS = "status";
     private static final String COL_HORA = "hora";
-
-    // User Info
     private static final String COL_USER_ID = "user_id";
     private static final String COL_NOME = "nome_paciente";
     private static final String COL_SNS = "sns";
     private static final String COL_DATA_NASC = "data_nascimento";
     private static final String COL_TELEFONE = "telefone";
-
-    // Triagem Info
     private static final String COL_MOTIVO = "motivo";
     private static final String COL_QUEIXA = "queixa";
     private static final String COL_DESCRICAO = "descricao";
@@ -82,10 +77,32 @@ public class PulseiraBDHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    // --- MÉTODOS DE SINCRONIZAÇÃO (NOVO) ---
+
+    public void sincronizarPulseiras(ArrayList<Pulseira> pulseiras) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete(TABLE_PULSEIRA, null, null);
+            for (Pulseira p : pulseiras) {
+                insertPulseira(db, p);
+            }
+            db.setTransactionSuccessful(); // Marca como sucesso
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     public void adicionarPulseira(Pulseira p) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
+        insertPulseira(db, p);
+    }
 
+    // Helper privado para inserir usando a base de dados já aberta
+    private void insertPulseira(SQLiteDatabase db, Pulseira p) {
+        ContentValues values = new ContentValues();
         values.put(COL_ID, p.getId());
         values.put(COL_CODIGO, p.getCodigo());
         values.put(COL_PRIORIDADE, p.getPrioridade());
@@ -96,8 +113,6 @@ public class PulseiraBDHelper extends SQLiteOpenHelper {
         values.put(COL_SNS, p.getSns());
         values.put(COL_DATA_NASC, p.getDataNascimento());
         values.put(COL_TELEFONE, p.getTelefone());
-
-        // Campos de Triagem (podem vir a null, sem problema)
         values.put(COL_MOTIVO, p.getMotivo());
         values.put(COL_QUEIXA, p.getQueixa());
         values.put(COL_DESCRICAO, p.getDescricao());
@@ -122,22 +137,17 @@ public class PulseiraBDHelper extends SQLiteOpenHelper {
 
         if (cursor.moveToFirst()) {
             do {
-                // Criar pulseira vazia
                 Pulseira p = new Pulseira();
-
-                // Preencher com SETTERS (Mais seguro que o construtor gigante)
                 p.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)));
                 p.setCodigo(cursor.getString(cursor.getColumnIndexOrThrow(COL_CODIGO)));
                 p.setPrioridade(cursor.getString(cursor.getColumnIndexOrThrow(COL_PRIORIDADE)));
                 p.setStatus(cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS)));
                 p.setDataEntrada(cursor.getString(cursor.getColumnIndexOrThrow(COL_HORA)));
-
                 p.setUserProfileId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_USER_ID)));
                 p.setNomePaciente(cursor.getString(cursor.getColumnIndexOrThrow(COL_NOME)));
                 p.setSns(cursor.getString(cursor.getColumnIndexOrThrow(COL_SNS)));
                 p.setDataNascimento(cursor.getString(cursor.getColumnIndexOrThrow(COL_DATA_NASC)));
                 p.setTelefone(cursor.getString(cursor.getColumnIndexOrThrow(COL_TELEFONE)));
-
                 p.setMotivo(cursor.getString(cursor.getColumnIndexOrThrow(COL_MOTIVO)));
                 p.setQueixa(cursor.getString(cursor.getColumnIndexOrThrow(COL_QUEIXA)));
                 p.setDescricao(cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRICAO)));
