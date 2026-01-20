@@ -47,10 +47,7 @@ public class EstatisticasActivity extends AppCompatActivity {
     }
 
     private void fetchTotalUsers() {
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-
-        String url = baseUrl + "api/user/total" + "?auth_key=" + token;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_TOTAL_USERS);
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Request.Method.GET,

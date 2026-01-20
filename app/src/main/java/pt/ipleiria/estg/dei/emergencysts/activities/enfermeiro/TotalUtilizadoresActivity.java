@@ -41,10 +41,7 @@ public class TotalUtilizadoresActivity extends AppCompatActivity {
     }
 
     private void carregarUtilizadores() {
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-
-        String url = baseUrl + "api/paciente" + "?auth_key=" + token;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url, response -> {
             try {

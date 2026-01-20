@@ -41,7 +41,8 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
     private View dotPrioridade;
 
     private LinearLayout layoutBotoes;
-    private Button btnArquivar, btnEliminar;
+    // REMOVIDO: btnArquivar
+    private Button btnEliminar;
 
     private int triagemId;
     private MqttClientManager mqtt;
@@ -108,7 +109,7 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
         layoutBotoes = findViewById(R.id.layoutBotoesAcao);
-        btnArquivar = findViewById(R.id.btnArquivar);
+        // REMOVIDO: Inicialização do btnArquivar
         btnEliminar = findViewById(R.id.btnEliminar);
 
         String role = SharedPrefManager.getInstance(this).getKeyRole();
@@ -116,18 +117,13 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
             if (layoutBotoes != null) layoutBotoes.setVisibility(View.GONE);
         } else {
             if (layoutBotoes != null) layoutBotoes.setVisibility(View.VISIBLE);
-            if (btnArquivar != null) btnArquivar.setOnClickListener(v -> confirmarArquivar());
             if (btnEliminar != null) btnEliminar.setOnClickListener(v -> confirmarEliminar());
         }
     }
 
     private void getTriagem() {
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-        if (!baseUrl.endsWith("/")) baseUrl += "/";
-
-        // Importante: expand=pulseira para obtermos o pulseiraId para o filtro do MQTT
-        String url = baseUrl + "api/triagem/" + triagemId + "?expand=userprofile,pulseira&auth_key=" + token;
+        String url = VolleySingleton.getInstance(this)
+                .getAPIUrl(VolleySingleton.ENDPOINT_TRIAGEM + "/" + triagemId + "?expand=userprofile,pulseira");
 
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,
                 this::bindData,
@@ -191,47 +187,22 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
         return data;
     }
 
-    private void confirmarArquivar() {
-        if (pulseiraId == -1) {
-            Toast.makeText(this, "Aguarde o carregamento da pulseira.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Arquivar Triagem")
-                .setMessage("Deseja marcar como FINALIZADO?")
-                .setPositiveButton("Sim", (d, w) -> acaoAPI(true))
-                .setNegativeButton("Não", null)
-                .show();
-    }
-
     private void confirmarEliminar() {
         new AlertDialog.Builder(this)
                 .setTitle("Eliminar")
                 .setMessage("Apagar permanentemente?")
-                .setPositiveButton("Apagar", (d, w) -> acaoAPI(false))
+                .setPositiveButton("Apagar", (d, w) -> eliminarTriagemAPI()) // Alterado para chamar o metodo direto
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
 
-    private void acaoAPI(boolean isArquivar) {
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-        if (!baseUrl.endsWith("/")) baseUrl += "/";
-
-        String url;
-        final String method;
-
-        if (isArquivar) {
-            url = baseUrl + "api/pulseira/" + pulseiraId + "?auth_key=" + token + "&arquivar=1";
-            method = "PUT";
-        } else {
-            url = baseUrl + "api/triagem/" + triagemId + "?auth_key=" + token;
-            method = "DELETE";
-        }
+    // Método renomeado e simplificado (sem lógica de arquivar)
+    private void eliminarTriagemAPI() {
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_TRIAGEM + "/" + triagemId + "?expand=userprofile,pulseira");
 
         StringRequest req = new StringRequest(Request.Method.POST, url,
                 response -> {
-                    Toast.makeText(this, "Operação realizada!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Triagem eliminada!", Toast.LENGTH_SHORT).show();
                     finish();
                 },
                 error -> Toast.makeText(this, "Erro: " + error.getMessage(), Toast.LENGTH_SHORT).show()
@@ -239,7 +210,7 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-                params.put("_method", method);
+                params.put("_method", "DELETE");
                 return params;
             }
         };

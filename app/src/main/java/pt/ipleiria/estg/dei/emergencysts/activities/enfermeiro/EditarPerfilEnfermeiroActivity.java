@@ -75,13 +75,10 @@ public class EditarPerfilEnfermeiroActivity extends AppCompatActivity {
 
         progressBar.setVisibility(View.VISIBLE);
 
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        if (!baseUrl.endsWith("/")) baseUrl += "/";
-
         int userId = SharedPrefManager.getInstance(this).getEnfermeiro().getId();
         String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
 
-        String url = baseUrl + "api/enfermeiro/" + userId + "?auth_key=" + token;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_ENFERMEIRO + "/" + userId);
 
         StringRequest request = new StringRequest(Request.Method.PUT, url,
                 response -> {

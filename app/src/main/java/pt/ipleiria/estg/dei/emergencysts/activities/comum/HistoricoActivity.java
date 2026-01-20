@@ -91,11 +91,8 @@ public class HistoricoActivity extends AppCompatActivity implements TriagemListe
     private void carregarHistorico() {
         if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(true);
 
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        if (!baseUrl.endsWith("/")) baseUrl += "/";
-
-        String url = baseUrl + "api/triagem?auth_key=" + token + "&expand=paciente,pulseira,userprofile";
+        String url = VolleySingleton.getInstance(this)
+                .getAPIUrl(VolleySingleton.ENDPOINT_TRIAGEM + "?expand=paciente,pulseira,userprofile");
 
         JsonArrayRequest req = new JsonArrayRequest(Request.Method.GET, url, null,
                 response -> {

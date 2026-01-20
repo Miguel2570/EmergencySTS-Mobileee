@@ -72,11 +72,7 @@ public class ConsultarPacienteActivity extends AppCompatActivity {
         emptyState.setVisibility(View.GONE);
         resultCard.setVisibility(View.GONE);
 
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-
-        // CORREÇÃO IMPORTANTE
-        String url = baseUrl + "api/paciente?nif=" + nif + "&auth_key=" + token;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE + "?nif=" + nif);
 
         JsonArrayRequest request = new JsonArrayRequest(
                 Request.Method.GET,

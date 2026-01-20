@@ -96,8 +96,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         // Enviar credenciais também no URL (Segurança extra para o Yii2 ler se necessário)
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl() + "api/auth/login";
-        String url = baseUrl + "?username=" + username + "&password=" + password;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_LOGIN);
 
         // Usamos StringRequest porque é o formato "Formulário" nativo que o PHP adora
         StringRequest request = new StringRequest(Request.Method.POST, url,

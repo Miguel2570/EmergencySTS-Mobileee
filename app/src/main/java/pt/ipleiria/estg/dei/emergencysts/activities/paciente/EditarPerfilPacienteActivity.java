@@ -80,12 +80,8 @@ public class EditarPerfilPacienteActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
 
         final Paciente original = SharedPrefManager.getInstance(this).getPaciente();
-        final String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        if (!baseUrl.endsWith("/")) baseUrl += "/";
 
-        // URL com token para autenticação
-        String url = baseUrl + "api/paciente/" + original.getId() + "?auth_key=" + token;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE + "/" + original.getId());
 
         // POST com overriding para contornar problemas de PUT no servidor
         StringRequest request = new StringRequest(Request.Method.POST, url,
@@ -110,32 +106,21 @@ public class EditarPerfilPacienteActivity extends AppCompatActivity {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
 
-                // Informa o Yii2 que este POST deve ser tratado como um PUT
-                params.put("_method", "PUT");
+                // Tenta enviar os dois formatos para garantir compatibilidade com Yii2
+                params.put("nome", etNome.getText().toString());
+                params.put("email", etEmail.getText().toString());
+                params.put("telefone", etTelefone.getText().toString());
+                params.put("morada", etMorada.getText().toString());
+                params.put("nif", etNif.getText().toString());
+                params.put("sns", etSns.getText().toString());
 
-                // Envio dos dados no formato Paciente[campo]
-                params.put("Paciente[nome]", nome);
-                params.put("Paciente[telefone]", telefone);
-                params.put("Paciente[morada]", morada);
-
-                // IMPORTANTE: Só envia se mudou para não disparar a regra 'unique' do NIF/SNS/Email
-                if (!email.equalsIgnoreCase(original.getEmail())) {
-                    params.put("Paciente[email]", email);
-                }
-                if (!nif.equals(original.getNif())) {
-                    params.put("Paciente[nif]", nif);
-                }
-                if (!sns.equals(original.getSns())) {
-                    params.put("Paciente[sns]", sns);
-                }
-
-                // Campos obrigatórios que não mudam nesta activity mas o modelo exige
-                if (original.getGenero() != null) {
-                    params.put("Paciente[genero]", original.getGenero());
-                }
-                if (original.getDataNascimento() != null) {
-                    params.put("Paciente[datanascimento]", original.getDataNascimento());
-                }
+                // Formato Model[campo]
+                params.put("Enfermeiro[nome]", etNome.getText().toString());
+                params.put("Enfermeiro[email]", etEmail.getText().toString());
+                params.put("Enfermeiro[telefone]", etTelefone.getText().toString());
+                params.put("Enfermeiro[morada]", etMorada.getText().toString());
+                params.put("Enfermeiro[nif]", etNif.getText().toString());
+                params.put("Enfermeiro[sns]", etSns.getText().toString());
 
                 return params;
             }

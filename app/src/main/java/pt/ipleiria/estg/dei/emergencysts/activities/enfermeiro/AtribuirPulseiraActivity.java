@@ -100,9 +100,7 @@ public class AtribuirPulseiraActivity extends AppCompatActivity {
     }
 
     private void carregarDadosTriagem() {
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String authKey = SharedPrefManager.getInstance(this).getKeyAccessToken();
-        String url = baseUrl + "api/pulseira/" + pulseiraId + "?expand=triagem,userprofile&auth_key=" + authKey;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PULSEIRA + "/" + pulseiraId);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
