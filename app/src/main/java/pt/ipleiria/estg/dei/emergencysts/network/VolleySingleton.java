@@ -59,8 +59,6 @@ public class VolleySingleton {
         getRequestQueue().add(req);
     }
 
-    // --- NOVOS MÉTODOS "INSPIRADOS" NO PROJETO LUSITANIA ---
-
     /**
      * Verifica se há ligação à internet antes de fazer pedidos
      */
