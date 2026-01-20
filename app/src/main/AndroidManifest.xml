@@ -18,7 +18,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EmergencySTS"
         android:usesCleartextTraffic="true">
-
+        <activity android:name=".activities.enfermeiro.TotalUtilizadoresActivity"
+            android:exported="false" />
+        <activity android:name=".activities.enfermeiro.EstatisticasActivity"
+            android:exported="false" />
         <activity
             android:name=".activities.paciente.EditarPerfilPacienteActivity"
             android:exported="false" />
