@@ -47,6 +47,13 @@ public class EstatisticasActivity extends AppCompatActivity {
     }
 
     private void fetchTotalUsers() {
+
+        if (!VolleySingleton.getInstance(this).isInternetConnection()) {
+            tvTotalUsers.setText("-");
+            Toast.makeText(this, "Sem ligação à Internet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_TOTAL_USERS);
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(

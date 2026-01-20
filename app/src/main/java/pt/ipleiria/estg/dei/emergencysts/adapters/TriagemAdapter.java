@@ -115,10 +115,6 @@ public class TriagemAdapter extends BaseAdapter {
             holder.tvEnfermeiro.setText("Enf. " + enfNome);
 
             // Cliques nos Botões
-            holder.btnArquivar.setOnClickListener(v -> {
-                if (listener != null) listener.onArquivarClick(t.getId());
-            });
-
             holder.btnEliminar.setOnClickListener(v -> {
                 if (listener != null) listener.onEliminarClick(t.getId());
             });

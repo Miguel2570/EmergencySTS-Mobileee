@@ -12,7 +12,6 @@ import pt.ipleiria.estg.dei.emergencysts.R;
 import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
-import android.widget.CompoundButton;
 
 public class ConfigActivity extends AppCompatActivity {
 

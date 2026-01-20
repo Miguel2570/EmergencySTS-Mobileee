@@ -85,6 +85,11 @@ public class LoginActivity extends AppCompatActivity {
         final String username = etUsername.getText().toString().trim();
         final String password = etPassword.getText().toString().trim();
 
+        if (!VolleySingleton.getInstance(this).isInternetConnection()) {
+            Toast.makeText(this, "Sem ligação à Internet. Verifique o Wi-Fi ou Dados Móveis.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show();
             return;

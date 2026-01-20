@@ -13,7 +13,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.android.volley.Request;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONObject;
 
@@ -30,7 +29,6 @@ import pt.ipleiria.estg.dei.emergencysts.modelo.Pulseira;
 import pt.ipleiria.estg.dei.emergencysts.modelo.Triagem;
 import pt.ipleiria.estg.dei.emergencysts.network.VolleySingleton;
 import pt.ipleiria.estg.dei.emergencysts.utils.PulseiraBDHelper;
-import pt.ipleiria.estg.dei.emergencysts.utils.PulseiraJsonParser;
 import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
 import pt.ipleiria.estg.dei.emergencysts.utils.TriagemJsonParser;
 
@@ -100,7 +98,7 @@ public class HistoricoActivity extends AppCompatActivity implements TriagemListe
                     try {
                         listaTriagens.clear();
 
-                        //  OFFLINE: Limpar BD antiga
+                        // OFFLINE: Limpar BD antiga para atualizar com os dados novos
                         PulseiraBDHelper db = PulseiraBDHelper.getInstance(this);
                         db.removeAllPulseiras();
 
@@ -217,13 +215,13 @@ public class HistoricoActivity extends AppCompatActivity implements TriagemListe
         if (tvTotalTriagens != null) tvTotalTriagens.setText("Total (Offline): " + listaTriagens.size());
     }
 
-    // INTERFACE TriagemListener e API
+    // INTERFACE TriagemListener
     @Override
     public void onTriagemClick(int id) {
-        //  método da PulseiraJsonParser
-        if (!PulseiraJsonParser.isConnectionInternet(this)) {
+        // Atualizado para usar o VolleySingleton (Padrão do projeto)
+        if (!VolleySingleton.getInstance(this).isInternetConnection()) {
             Toast.makeText(this, "Sem internet: Não é possível ver os detalhes.", Toast.LENGTH_SHORT).show();
-            return; // Sai da função e não abre a atividade
+            return;
         }
 
         Intent intent = new Intent(this, DetalhesTriagemActivity.class);
@@ -231,23 +229,16 @@ public class HistoricoActivity extends AppCompatActivity implements TriagemListe
         startActivity(intent);
     }
 
-    @Override
-    public void onArquivarClick(int id) {
-        Triagem t = encontrarTriagem(id);
-        if (t != null && t.getPulseira() != null) { // Getter
-            new AlertDialog.Builder(this)
-                    .setTitle("Arquivar")
-                    .setMessage("Marcar como ATENDIDO?")
-                    .setPositiveButton("Sim", (d, w) -> arquivarTriagemAPI(t))
-                    .setNegativeButton("Não", null)
-                    .show();
-        } else {
-            Toast.makeText(this, "Erro: Triagem sem pulseira.", Toast.LENGTH_SHORT).show();
-        }
-    }
+    // O método onArquivarClick foi REMOVIDO daqui.
+    // Lembre-se de o remover também da interface TriagemListener e do Adapter.
 
     @Override
     public void onEliminarClick(int id) {
+        if (!VolleySingleton.getInstance(this).isInternetConnection()) {
+            Toast.makeText(this, "Funcionalidade disponível apenas Online.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         new AlertDialog.Builder(this)
                 .setTitle("Eliminar")
                 .setMessage("Tem a certeza?")
@@ -256,60 +247,19 @@ public class HistoricoActivity extends AppCompatActivity implements TriagemListe
                 .show();
     }
 
-    private Triagem encontrarTriagem(int id) {
-        for (Triagem t : listaTriagens) {
-            if (t.getId() == id) return t;
-        }
-        return null;
-    }
-
-    private void arquivarTriagemAPI(Triagem t) {
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-        String url = baseUrl + "api/pulseira/" + t.getPulseira().getId() + "?auth_key=" + token + "&arquivar=1"; // Getter
-
-        StringRequest request = new StringRequest(Request.Method.POST, url,
-                response -> {
-                    Toast.makeText(this, "Arquivado com sucesso!", Toast.LENGTH_SHORT).show();
-                    carregarHistorico();
-                },
-                error -> Toast.makeText(this, "Erro ao arquivar.", Toast.LENGTH_SHORT).show()
-        ) {
-            @Override
-            public Map<String, String> getHeaders() {
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type", "application/x-www-form-urlencoded");
-                return headers;
-            }
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("_method", "PUT");
-                return params;
-            }
-        };
-        VolleySingleton.getInstance(this).addToRequestQueue(request);
-    }
-
     private void eliminarTriagemPermanente(int idTriagem) {
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String token = SharedPrefManager.getInstance(this).getKeyAccessToken();
-        String url = baseUrl + "api/triagem/" + idTriagem + "?auth_key=" + token;
+        String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_TRIAGEM + "/" + idTriagem);
 
-        StringRequest request = new StringRequest(Request.Method.POST, url,
+        // Map para passar o parâmetro _method=DELETE no corpo (compatibilidade Yii2/PHP)
+        Map<String, String> params = new HashMap<>();
+        params.put("_method", "DELETE");
+
+        VolleySingleton.getInstance(this).apiRequest(Request.Method.POST, url, params,
                 response -> {
                     Toast.makeText(this, "Eliminado.", Toast.LENGTH_SHORT).show();
                     carregarHistorico();
                 },
                 error -> Toast.makeText(this, "Erro ao eliminar.", Toast.LENGTH_SHORT).show()
-        ) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("_method", "DELETE");
-                return params;
-            }
-        };
-        VolleySingleton.getInstance(this).addToRequestQueue(request);
+        );
     }
 }

@@ -41,9 +41,16 @@ public class AtribuirPulseiraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_atribuir_pulseira);
 
+        if (VolleySingleton.getInstance(this).isInternetConnection()) {
+            carregarDadosTriagem();
+        } else {
+            Toast.makeText(this, "Sem internet: Não é possível carregar os dados.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
         inicializarCampos();
 
-        // Configuração do Spinner
         String[] cores = {"Selecione a Prioridade...", "Vermelho", "Laranja", "Amarelo", "Verde", "Azul"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, cores);
         spinnerPrioridade.setAdapter(adapter);
@@ -74,6 +81,11 @@ public class AtribuirPulseiraActivity extends AppCompatActivity {
         if (btnVoltar != null) btnVoltar.setOnClickListener(v -> finish());
 
         btnAtribuir.setOnClickListener(v -> {
+            if (!VolleySingleton.getInstance(this).isInternetConnection()) {
+                Toast.makeText(this, "Sem internet. Não é possível atribuir a pulseira.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             String prioridade = spinnerPrioridade.getSelectedItem().toString();
             if (prioridade.equals("Selecione a Prioridade...")) {
                 Toast.makeText(this, "Selecione uma cor.", Toast.LENGTH_SHORT).show();

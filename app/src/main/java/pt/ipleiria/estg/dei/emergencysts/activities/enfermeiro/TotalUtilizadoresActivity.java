@@ -41,6 +41,13 @@ public class TotalUtilizadoresActivity extends AppCompatActivity {
     }
 
     private void carregarUtilizadores() {
+
+        if (!VolleySingleton.getInstance(this).isInternetConnection()) {
+            tvTotalUsers.setText("Offline");
+            Toast.makeText(this, "Sem ligação à Internet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
         String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url, response -> {
