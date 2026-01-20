@@ -137,11 +137,8 @@ public class PerfilFragment extends Fragment {
         if (getContext() == null) return;
 
         Enfermeiro stored = SharedPrefManager.getInstance(getContext()).getEnfermeiro();
-        String token = SharedPrefManager.getInstance(getContext()).getKeyAccessToken();
-        String baseUrl = SharedPrefManager.getInstance(getContext()).getServerUrl();
 
-        if (!baseUrl.endsWith("/")) baseUrl += "/";
-        String url = baseUrl + "api/enfermeiro/perfil?auth_key=" + token;
+        String url = VolleySingleton.getInstance(getContext()).getAPIUrl(VolleySingleton.ENDPOINT_ENFERMEIRO_PERFIL);
 
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -192,13 +189,8 @@ public class PerfilFragment extends Fragment {
     private void carregarPerfilPaciente() {
         if (getContext() == null) return;
 
-        // 1. Preparar Token e URL
-        String token = SharedPrefManager.getInstance(getContext()).getKeyAccessToken();
-        String baseUrl = SharedPrefManager.getInstance(getContext()).getServerUrl();
-        if (!baseUrl.endsWith("/")) baseUrl += "/";
-
         // MUDANÇA IMPORTANTE: Endpoint específico do perfil do paciente
-        String url = baseUrl + "api/paciente/perfil?auth_key=" + token;
+        String url = VolleySingleton .getInstance(getContext()).getAPIUrl(VolleySingleton.ENDPOINT_PACIENTE_PERFIL);
 
         // MUDANÇA IMPORTANTE: JsonObjectRequest em vez de Array
         JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, url, null,

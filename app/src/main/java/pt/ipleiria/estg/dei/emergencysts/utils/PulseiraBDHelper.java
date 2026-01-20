@@ -13,7 +13,7 @@ import pt.ipleiria.estg.dei.emergencysts.modelo.Pulseira;
 public class PulseiraBDHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "emergencysts.db";
-    private static final int DB_VERSION = 3; // SUBI A VERSÃO PARA FORÇAR ATUALIZAÇÃO
+    private static final int DB_VERSION = 3;
 
     private static final String TABLE_PULSEIRA = "pulseiras";
 

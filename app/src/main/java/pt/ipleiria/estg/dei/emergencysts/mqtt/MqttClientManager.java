@@ -11,13 +11,15 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+// IMPORTANTE: Troca para as bibliotecas do Android Service
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
-import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -32,13 +34,15 @@ public class MqttClientManager {
     private static final String TAG = "MqttClientManager";
     private static final String CHANNEL_ID = "emergency_channel_id_v3";
     private static MqttClientManager instance;
-    private MqttClient client;
+
+    // ALTERAÇÃO: Usar MqttAndroidClient em vez de MqttClient
+    private MqttAndroidClient client;
     private Context context;
 
-    // NOVO: Variável para impedir múltiplas tentativas ao mesmo tempo
     private boolean isConnecting = false;
 
     private MqttClientManager(Context context) {
+        // Usar getApplicationContext evita memory leaks
         this.context = context.getApplicationContext();
         createNotificationChannel();
     }
@@ -53,8 +57,18 @@ public class MqttClientManager {
     public void subscribe(String topic) {
         if (client != null && client.isConnected()) {
             try {
-                client.subscribe(topic, 1);
-                Log.d(TAG, "Subscrito com sucesso: " + topic);
+                // A subscrição no AndroidClient também é assíncrona, mas o QoS 1 garante a entrega
+                client.subscribe(topic, 1, null, new IMqttActionListener() {
+                    @Override
+                    public void onSuccess(IMqttToken asyncActionToken) {
+                        Log.d(TAG, "Subscrito com sucesso: " + topic);
+                    }
+
+                    @Override
+                    public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                        Log.e(TAG, "Falha ao subscrever: " + topic);
+                    }
+                });
             } catch (MqttException e) {
                 Log.e(TAG, "Erro ao subscrever tópico: " + topic, e);
             }
@@ -66,19 +80,16 @@ public class MqttClientManager {
             return;
         }
 
-        // 1. SE JÁ ESTIVER CONECTADO, NÃO FAZ NADA
         if (client != null && client.isConnected()) {
-            // Log.d(TAG, "Cliente já conectado.");
             return;
         }
 
-        // 2. SE JÁ ESTIVER A TENTAR CONECTAR, NÃO FAZ NADA (Evita o erro dos logs!)
         if (isConnecting) {
             Log.d(TAG, "Conexão em progresso... aguardando.");
             return;
         }
 
-        isConnecting = true; // Marca que começou a tentar
+        isConnecting = true;
 
         String serverIp = SharedPrefManager.getInstance(context).getServerBase();
         String cleanIp = serverIp.replace("http://", "").replace("https://", "").replace("/", "");
@@ -91,7 +102,6 @@ public class MqttClientManager {
         Log.d(TAG, "Conectando ao Broker: " + brokerUrl);
 
         try {
-            // ID único com timestamp para garantir unicidade
             String clientId;
             if (SharedPrefManager.getInstance(context).getEnfermeiroBase() != null) {
                 clientId = "Android_Enf_" + SharedPrefManager.getInstance(context).getEnfermeiroBase().getId()
@@ -100,34 +110,40 @@ public class MqttClientManager {
                 clientId = "Android_Pac_" + SharedPrefManager.getInstance(context).getPacienteBase().getId()
                         + "_" + System.currentTimeMillis();
             } else {
-                clientId = MqttClient.generateClientId() + "_" + System.currentTimeMillis();
+                clientId = "Android_Guest_" + System.currentTimeMillis();
             }
 
-            client = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
+            // ALTERAÇÃO: Instanciar o MqttAndroidClient
+            client = new MqttAndroidClient(context, brokerUrl, clientId);
 
             MqttConnectOptions options = new MqttConnectOptions();
             options.setUserName("emergencysts");
             options.setPassword("i%POZsi02Kmc".toCharArray());
             options.setAutomaticReconnect(true);
-            options.setCleanSession(true);
+            options.setCleanSession(true); // Se quiseres receber msgs perdidas, muda para false
             options.setConnectionTimeout(10);
 
+            // Callback para mensagens recebidas (Funciona igual ao anterior)
             client.setCallback(new MqttCallbackExtended() {
                 @Override
                 public void connectComplete(boolean reconnect, String serverURI) {
-                    isConnecting = false; // SUCESSO: Liberta a flag
-                    Log.d(TAG, "Conectado ao MQTT!");
-                    subscribeToTopics();
+                    // Nota: No MqttAndroidClient, a lógica de sucesso inicial deve ir no IMqttActionListener abaixo,
+                    // mas este método é ótimo para quando o 'AutomaticReconnect' recupera a rede sozinho.
+                    if (reconnect) {
+                        Log.d(TAG, "Reconectado automaticamente ao MQTT!");
+                        subscribeToTopics();
+                    }
                 }
 
                 @Override
                 public void connectionLost(Throwable cause) {
-                    isConnecting = false; // FALHA: Liberta a flag para tentar de novo
                     Log.e(TAG, "Conexão perdida.");
+                    // O AutomaticReconnect tentará reconectar sozinho
                 }
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) {
+                    // Lógica de receção de mensagem mantém-se igual
                     String payload = new String(message.getPayload());
                     Log.d(TAG, "Mensagem MQTT: " + topic + " -> " + payload);
 
@@ -166,16 +182,21 @@ public class MqttClientManager {
                 public void deliveryComplete(IMqttDeliveryToken token) {}
             });
 
-            // Inicia conexão em background
-            new Thread(() -> {
-                try {
-                    client.connect(options);
-                } catch (MqttException e) {
-                    isConnecting = false; // ERRO: Liberta a flag
-                    Log.e(TAG, "Erro ao conectar: " + e.getMessage());
-                    e.printStackTrace();
+            // ALTERAÇÃO: O connect agora recebe um Listener para sucesso/falha
+            client.connect(options, null, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    isConnecting = false;
+                    Log.d(TAG, "Conectado com sucesso (Callback)!");
+                    subscribeToTopics();
                 }
-            }).start();
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    isConnecting = false;
+                    Log.e(TAG, "Falha ao conectar: " + exception.getMessage());
+                }
+            });
 
         } catch (MqttException e) {
             isConnecting = false;
@@ -251,15 +272,13 @@ public class MqttClientManager {
     }
 
     public void disconnect() {
-        new Thread(() -> {
-            try {
-                if (client != null && client.isConnected()) {
-                    client.disconnect();
-                    Log.d(TAG, "Desconectado.");
-                }
-            } catch (MqttException e) {
-                Log.e(TAG, "Erro ao desconectar", e);
+        try {
+            if (client != null && client.isConnected()) {
+                client.disconnect();
+                Log.d(TAG, "Desconectado.");
             }
-        }).start();
+        } catch (MqttException e) {
+            Log.e(TAG, "Erro ao desconectar", e);
+        }
     }
 }

@@ -200,21 +200,19 @@ public class DetalhesTriagemActivity extends AppCompatActivity {
     private void eliminarTriagemAPI() {
         String url = VolleySingleton.getInstance(this).getAPIUrl(VolleySingleton.ENDPOINT_TRIAGEM + "/" + triagemId + "?expand=userprofile,pulseira");
 
-        StringRequest req = new StringRequest(Request.Method.POST, url,
+        Map<String, String> params = new HashMap<>();
+        params.put("_method", "DELETE");
+
+        VolleySingleton.getInstance(this).apiRequest(
+                Request.Method.POST,
+                VolleySingleton.ENDPOINT_TRIAGEM + "/" + triagemId + "?expand=userprofile,pulseira",
+                params,
                 response -> {
                     Toast.makeText(this, "Triagem eliminada!", Toast.LENGTH_SHORT).show();
                     finish();
                 },
                 error -> Toast.makeText(this, "Erro: " + error.getMessage(), Toast.LENGTH_SHORT).show()
-        ) {
-            @Override
-            protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
-                params.put("_method", "DELETE");
-                return params;
-            }
-        };
-        VolleySingleton.getInstance(this).addToRequestQueue(req);
+        );
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
