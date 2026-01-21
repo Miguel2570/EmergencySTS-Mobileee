@@ -19,11 +19,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
-import com.android.volley.Request;
-import com.android.volley.toolbox.JsonObjectRequest;
-
-import org.json.JSONArray;
-
 import java.util.ArrayList;
 
 import pt.ipleiria.estg.dei.emergencysts.R;
@@ -33,9 +28,6 @@ import pt.ipleiria.estg.dei.emergencysts.listeners.PulseiraListener;
 import pt.ipleiria.estg.dei.emergencysts.modelo.Pulseira;
 import pt.ipleiria.estg.dei.emergencysts.mqtt.MqttClientManager;
 import pt.ipleiria.estg.dei.emergencysts.network.VolleySingleton;
-import pt.ipleiria.estg.dei.emergencysts.utils.PulseiraBDHelper;
-import pt.ipleiria.estg.dei.emergencysts.utils.PulseiraJsonParser;
-import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
 
 public class MostrarPulseirasActivity extends AppCompatActivity implements PulseiraListener {
 
@@ -43,7 +35,6 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
     private LinearLayout layoutSemPulseira;
     private boolean isPaciente;
     private TextView tvTitulo, tvSubtitulo;
-    private TextView tvTotalPulseiras;
 
     // Enfermeiro
     private ListView listViewPulseiras;
@@ -65,7 +56,6 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
         layoutSemPulseira = findViewById(R.id.layoutSemPulseira);
         tvTitulo = findViewById(R.id.tvTitulo);
         tvSubtitulo = findViewById(R.id.tvSubtitulo);
-        tvTotalPulseiras = findViewById(R.id.tvTotalPulseiras);
 
         ImageView btnBack = findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> finish());
@@ -102,6 +92,11 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
     @Override
     protected void onResume() {
         super.onResume();
+
+        // 1. IMPORTANTE: Definir esta Activity como o Listener para receber os dados
+        VolleySingleton.getInstance(this).setPulseiraListener(this);
+
+        // 2. Pedir os dados ao Singleton
         getPulseirasAPI();
 
         IntentFilter filter = new IntentFilter("MQTT_MESSAGE");
@@ -131,16 +126,11 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
                 getPulseirasAPI();
             }
 
-            // Feedback visual simples (app aberta)
+            // Feedback visual
             if (isPaciente && topic.startsWith("pulseira/atualizada/")) {
-                Toast.makeText(ctx,
-                        "O estado da sua pulseira foi atualizado!",
-                        Toast.LENGTH_LONG).show();
-
+                Toast.makeText(ctx, "O estado da sua pulseira foi atualizado!", Toast.LENGTH_LONG).show();
             } else if (!isPaciente && topic.startsWith("pulseira/criada/")) {
-                Toast.makeText(ctx,
-                        "Nova pulseira recebida!",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(ctx, "Nova pulseira recebida!", Toast.LENGTH_SHORT).show();
             }
         }
     };
@@ -149,60 +139,31 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
         progressBar.setVisibility(View.VISIBLE);
         layoutSemPulseira.setVisibility(View.GONE);
 
-        String baseUrl = SharedPrefManager.getInstance(this).getServerUrl();
-        String authKey = SharedPrefManager.getInstance(this).getKeyAccessToken();
-
-        StringBuilder urlBuilder = new StringBuilder(baseUrl);
-        urlBuilder.append("api/pulseira?");
-
-        if (isPaciente) {
-            urlBuilder.append("sort=-id&");
-        } else {
-            urlBuilder.append("status=Em%20espera&prioridade=Pendente&");
-        }
-
-        urlBuilder.append("expand=userprofile&auth_key=").append(authKey);
-
-        JsonObjectRequest req = new JsonObjectRequest(
-                Request.Method.GET,
-                urlBuilder.toString(),
-                null,
-                response -> {
-                    progressBar.setVisibility(View.GONE);
-                    try {
-                        JSONArray data = response.has("data")
-                                ? response.getJSONArray("data")
-                                : response.optJSONArray("items");
-
-                        ArrayList<Pulseira> novas = new ArrayList<>();
-                        if (data != null) {
-                            novas = PulseiraJsonParser.parserJsonPulseiras(data);
-                            PulseiraBDHelper db = PulseiraBDHelper.getInstance(this);
-                            db.removeAllPulseiras();
-                            for (Pulseira p : novas) db.adicionarPulseira(p);
-                        }
-                        atualizarInterface(novas);
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                },
-                error -> {
-                    progressBar.setVisibility(View.GONE);
-                    PulseiraBDHelper db = PulseiraBDHelper.getInstance(this);
-                    atualizarInterface(db.getAllPulseiras());
-                    Toast.makeText(this, "Modo Offline", Toast.LENGTH_SHORT).show();
-                }
-        );
-
-        req.setShouldCache(false);
-        VolleySingleton.getInstance(this).addToRequestQueue(req);
+        // CHAMADA LIMPA: Toda a lógica de rede e BD está agora no VolleySingleton
+        VolleySingleton.getInstance(this).getPulseirasAtivasAPI(isPaciente);
     }
 
-    private void atualizarInterface(ArrayList<Pulseira> pulseiras) {
-        if (tvTotalPulseiras != null) {
-            tvTotalPulseiras.setText("Total de pulseiras: " + (pulseiras != null ? pulseiras.size() : 0));
+    // --- MÉTODOS DA INTERFACE PulseiraListener ---
+
+    @Override
+    public void onPulseirasLoaded(ArrayList<Pulseira> pulseiras) {
+        // Este método é chamado automaticamente pelo VolleySingleton quando os dados chegam
+        progressBar.setVisibility(View.GONE);
+        atualizarInterface(pulseiras);
+    }
+
+    @Override
+    public void onPulseiraClick(Pulseira pulseira) {
+        if (!isPaciente) {
+            Intent intent = new Intent(this, AtribuirPulseiraActivity.class);
+            intent.putExtra("pulseira_id", pulseira.getId());
+            startActivity(intent);
         }
+    }
+
+    // ---------------------------------------------
+
+    private void atualizarInterface(ArrayList<Pulseira> pulseiras) {
 
         if (pulseiras == null || pulseiras.isEmpty()) {
             layoutSemPulseira.setVisibility(View.VISIBLE);
@@ -239,42 +200,7 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
 
             tvCodigoPulseira.setText("#" + p.getCodigo());
 
-            String prioridade = p.getPrioridade();
-
-            if (prioridade != null && !prioridade.equalsIgnoreCase("Pendente")) {
-                tvEstadoBadge.setText(prioridade);
-                tvDescricao.setText("Triagem concluída. Aguarde chamada.");
-
-                switch (prioridade.toLowerCase()) {
-                    case "vermelho":
-                        tvEstadoBadge.setTextColor(Color.WHITE);
-                        tvEstadoBadge.setBackgroundResource(R.drawable.circle_red);
-                        break;
-                    case "laranja":
-                        tvEstadoBadge.setTextColor(Color.WHITE);
-                        tvEstadoBadge.setBackgroundResource(R.drawable.circle_orange);
-                        break;
-                    case "amarelo":
-                        tvEstadoBadge.setTextColor(Color.BLACK);
-                        tvEstadoBadge.setBackgroundResource(R.drawable.circle_yellow);
-                        break;
-                    case "verde":
-                        tvEstadoBadge.setTextColor(Color.WHITE);
-                        tvEstadoBadge.setBackgroundResource(R.drawable.circle_green);
-                        break;
-                    case "azul":
-                        tvEstadoBadge.setTextColor(Color.WHITE);
-                        tvEstadoBadge.setBackgroundResource(R.drawable.circle_blue);
-                        break;
-                    default:
-                        tvEstadoBadge.setBackgroundResource(R.drawable.bg_chip_pendente);
-                }
-            } else {
-                tvEstadoBadge.setText("Pendente");
-                tvEstadoBadge.setTextColor(Color.parseColor("#D84315"));
-                tvEstadoBadge.setBackgroundResource(R.drawable.bg_chip_pendente);
-                tvDescricao.setText("Aguarde na sala de espera pela triagem.");
-            }
+            configurarBadgePrioridade(p.getPrioridade());
 
         } else {
             listViewPulseiras.setVisibility(View.VISIBLE);
@@ -284,18 +210,45 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
         }
     }
 
-    @Override
-    public void onPulseiraClick(Pulseira pulseira) {
-        if (!isPaciente) {
-            Intent intent = new Intent(this, AtribuirPulseiraActivity.class);
-            intent.putExtra("pulseira_id", pulseira.getId());
-            startActivity(intent);
+    private void configurarBadgePrioridade(String prioridade) {
+        if (prioridade != null && !prioridade.equalsIgnoreCase("Pendente")) {
+            tvEstadoBadge.setText(prioridade);
+            tvDescricao.setText("Triagem concluída. Aguarde chamada.");
+
+            switch (prioridade.toLowerCase()) {
+                case "vermelho":
+                    tvEstadoBadge.setTextColor(Color.WHITE);
+                    tvEstadoBadge.setBackgroundResource(R.drawable.circle_red);
+                    break;
+                case "laranja":
+                    tvEstadoBadge.setTextColor(Color.WHITE);
+                    tvEstadoBadge.setBackgroundResource(R.drawable.circle_orange);
+                    break;
+                case "amarelo":
+                    tvEstadoBadge.setTextColor(Color.BLACK);
+                    tvEstadoBadge.setBackgroundResource(R.drawable.circle_yellow);
+                    break;
+                case "verde":
+                    tvEstadoBadge.setTextColor(Color.WHITE);
+                    tvEstadoBadge.setBackgroundResource(R.drawable.circle_green);
+                    break;
+                case "azul":
+                    tvEstadoBadge.setTextColor(Color.WHITE);
+                    tvEstadoBadge.setBackgroundResource(R.drawable.circle_blue);
+                    break;
+                default:
+                    tvEstadoBadge.setBackgroundResource(R.drawable.bg_chip_pendente);
+            }
+        } else {
+            tvEstadoBadge.setText("Pendente");
+            tvEstadoBadge.setTextColor(Color.parseColor("#D84315"));
+            tvEstadoBadge.setBackgroundResource(R.drawable.bg_chip_pendente);
+            tvDescricao.setText("Aguarde na sala de espera pela triagem.");
         }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Não desligar MQTT aqui (Singleton partilhado)
     }
 }

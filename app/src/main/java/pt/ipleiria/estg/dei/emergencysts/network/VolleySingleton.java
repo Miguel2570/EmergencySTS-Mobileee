@@ -15,12 +15,14 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import pt.ipleiria.estg.dei.emergencysts.listeners.PulseiraListener;
 import pt.ipleiria.estg.dei.emergencysts.modelo.Enfermeiro;
 import pt.ipleiria.estg.dei.emergencysts.modelo.Paciente;
 import pt.ipleiria.estg.dei.emergencysts.modelo.Pulseira;
@@ -29,6 +31,7 @@ import pt.ipleiria.estg.dei.emergencysts.modelo.Triagem;
 // Parsers
 import pt.ipleiria.estg.dei.emergencysts.utils.PacienteJsonParser;
 import pt.ipleiria.estg.dei.emergencysts.utils.PulseiraBDHelper;
+import pt.ipleiria.estg.dei.emergencysts.utils.PulseiraJsonParser;
 import pt.ipleiria.estg.dei.emergencysts.utils.SharedPrefManager;
 import pt.ipleiria.estg.dei.emergencysts.utils.TriagemJsonParser;
 import pt.ipleiria.estg.dei.emergencysts.utils.UserJsonParser;
@@ -48,7 +51,8 @@ public class VolleySingleton {
     public static final String ENDPOINT_ENFERMEIRO_PERFIL = "api/enfermeiro/perfil";
     public static final String ENDPOINT_TRIAGEM = "api/triagem";
     public static final String ENDPOINT_PULSEIRA = "api/pulseira";
-    public static final String ENDPOINT_TOTAL_USERS = "api/users/total";
+    public static final String ENDPOINT_TOTAL_USERS = "api/total";
+    public static final String ENDPOINT_ESTATISTICAS = "api/estatisticas";
 
     private static VolleySingleton instance;
     private RequestQueue requestQueue;
@@ -59,6 +63,7 @@ public class VolleySingleton {
     private TriagemListener triagemListener;
 
     private PulseiraBDHelper dbHelper;
+    private PulseiraListener pulseiraListener;
 
     private VolleySingleton(Context context) {
         this.ctx = context.getApplicationContext();
@@ -104,16 +109,10 @@ public class VolleySingleton {
                         JSONObject json = new JSONObject(response);
                         String token = "";
 
-                        // ==================================================================
-                        // 1. EXTRAÇÃO ROBUSTA DO TOKEN (CORREÇÃO AQUI)
-                        // ==================================================================
-
-                        // A) Tenta na raiz do JSON
                         if (!json.isNull("auth_key")) token = json.optString("auth_key");
                         if (token.isEmpty() && !json.isNull("access_token")) token = json.optString("access_token");
                         if (token.isEmpty() && !json.isNull("token")) token = json.optString("token");
 
-                        // B) Tenta dentro do objeto 'data' (Onde geralmente vem no Yii2/PHP)
                         if (token.isEmpty() && json.has("data")) {
                             JSONObject data = json.optJSONObject("data");
                             if (data != null) {
@@ -124,21 +123,23 @@ public class VolleySingleton {
                         }
 
                         if (!token.isEmpty()) {
-                            // 2. EXTRAIR DADOS DO UTILIZADOR
                             int id = -1;
-                            String role = "Enfermeiro"; // Default
+                            String role = "Enfermeiro";
                             String email = "";
 
-                            // Procura na raiz
                             id = json.optInt("id", json.optInt("user_id", -1));
                             role = json.optString("role", role);
+                            if (role.equalsIgnoreCase("admin") || role.equalsIgnoreCase("administrador")) {
+                                if (loginListener != null) {
+                                    loginListener.onLoginError("Acesso negado: Administradores devem usar a web.");
+                                }
+                                return;
+                            }
                             email = json.optString("email", "");
 
-                            // Procura dentro de 'data' (prioritário)
                             if (json.has("data")) {
                                 JSONObject data = json.optJSONObject("data");
                                 if (data != null) {
-                                    // Tenta 'user_id' ou 'id'
                                     int newId = data.optInt("user_id", -1);
                                     if (newId == -1) newId = data.optInt("id", -1);
                                     if (newId != -1) id = newId;
@@ -148,11 +149,9 @@ public class VolleySingleton {
                                 }
                             }
 
-                            // 3. GUARDAR SESSÃO
                             Enfermeiro userBase = new Enfermeiro(id, username, email, role);
                             SharedPrefManager.getInstance(ctx).userLogin(userBase, token);
 
-                            // Carregar perfil em background
                             if (role.equalsIgnoreCase("paciente") || role.equalsIgnoreCase("utente")) {
                                 getPacientePerfilAPI(token, username);
                             } else {
@@ -160,7 +159,6 @@ public class VolleySingleton {
                             }
 
                         } else {
-                            // Se o token continuar vazio após todas as tentativas
                             String errorMsg = json.optString("message", "Erro: Token não encontrado na resposta.");
                             if (loginListener != null) loginListener.onLoginError(errorMsg);
                         }
@@ -200,10 +198,7 @@ public class VolleySingleton {
         addToRequestQueue(req);
     }
 
-    // --------------------------------------------------------------------------------
-    // 2. MÉTODOS DE PERFIL
-    // --------------------------------------------------------------------------------
-
+    // MÉTODOS DE PERFIL
     private void getEnfermeiroPerfilAPI(String token, String username) {
         String url = getAPIUrl(ENDPOINT_ENFERMEIRO_PERFIL);
 
@@ -226,13 +221,11 @@ public class VolleySingleton {
                         if (loginListener != null) loginListener.onValidateLogin(token, username, enf.getRole());
 
                     } catch (Exception e) {
-                        // Se falhar o perfil, usa os dados básicos do login
                         String role = SharedPrefManager.getInstance(ctx).getEnfermeiroBase().getRole();
                         if (loginListener != null) loginListener.onValidateLogin(token, username, role);
                     }
                 },
                 error -> {
-                    // Se der erro de rede ao buscar perfil, navega na mesma com os dados básicos
                     String role = SharedPrefManager.getInstance(ctx).getEnfermeiroBase().getRole();
                     if (loginListener != null) loginListener.onValidateLogin(token, username, role);
                 }
@@ -288,9 +281,7 @@ public class VolleySingleton {
         addToRequestQueue(req);
     }
 
-    // --------------------------------------------------------------------------------
-    // 3. API LISTA DE PACIENTES
-    // --------------------------------------------------------------------------------
+    //LISTA DE PACIENTES
     public void getAllPacientesAPI() {
         if (!isInternetConnection()) {
             Toast.makeText(ctx, "Sem net", Toast.LENGTH_SHORT).show();
@@ -322,9 +313,7 @@ public class VolleySingleton {
         addToRequestQueue(req);
     }
 
-    // --------------------------------------------------------------------------------
-    // 4. API TRIAGENS / HISTÓRICO
-    // --------------------------------------------------------------------------------
+    //TRIAGENS / HISTÓRICO
     public void getHistoricoTriagensAPI(boolean isPaciente) {
 
         if (!isInternetConnection()) {
@@ -407,9 +396,6 @@ public class VolleySingleton {
         addToRequestQueue(req);
     }
 
-    // --------------------------------------------------------------------------------
-    // 5. HELPER GENÉRICO
-    // --------------------------------------------------------------------------------
     public void apiRequest(int method, String endpoint, final Map<String, String> params, final Response.Listener<String> onSuccess, final Response.ErrorListener onError) {
         if (!isInternetConnection()) {
             Toast.makeText(ctx, "Sem ligação à Internet", Toast.LENGTH_SHORT).show();
@@ -440,10 +426,7 @@ public class VolleySingleton {
         addToRequestQueue(req);
     }
 
-    // --------------------------------------------------------------------------------
     // UTILS
-    // --------------------------------------------------------------------------------
-
     private ArrayList<Triagem> converterPulseirasParaTriagens(ArrayList<Pulseira> pulseiras) {
         ArrayList<Triagem> lista = new ArrayList<>();
         for (Pulseira p : pulseiras) {
@@ -490,5 +473,54 @@ public class VolleySingleton {
             fullUrl += (fullUrl.contains("?") ? "&" : "?") + "auth_key=" + token;
         }
         return fullUrl;
+    }
+
+    public void setPulseiraListener(PulseiraListener listener) { this.pulseiraListener = listener; }
+
+    public void getPulseirasAtivasAPI(boolean isPaciente) {
+        if (!isInternetConnection()) {
+            Toast.makeText(ctx, "Modo Offline: A mostrar últimos dados.", Toast.LENGTH_SHORT).show();
+            ArrayList<Pulseira> locais = dbHelper.getAllPulseiras();
+            if (pulseiraListener != null) {
+                pulseiraListener.onPulseirasLoaded(locais);
+            }
+            return;
+        }
+
+        String baseUrl = SharedPrefManager.getInstance(ctx).getServerUrl();
+        String authKey = SharedPrefManager.getInstance(ctx).getKeyAccessToken();
+        StringBuilder urlBuilder = new StringBuilder(baseUrl);
+        urlBuilder.append("api/pulseira?");
+
+        if (isPaciente) {
+            urlBuilder.append("sort=-id&");
+        } else {
+            urlBuilder.append("status=Em%20espera&prioridade=Pendente&");
+        }
+        urlBuilder.append("expand=userprofile&auth_key=").append(authKey);
+
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, urlBuilder.toString(), null,
+                response -> {
+                    try {
+                        JSONArray data = response.has("data") ? response.getJSONArray("data") : response.optJSONArray("items");
+
+                        ArrayList<Pulseira> listaOnline = PulseiraJsonParser.parserJsonPulseiras(data);
+
+                        dbHelper.sincronizarPulseiras(listaOnline);
+
+                        if (pulseiraListener != null) {
+                            pulseiraListener.onPulseirasLoaded(listaOnline);
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    ArrayList<Pulseira> locais = dbHelper.getAllPulseiras();
+                    if (pulseiraListener != null) pulseiraListener.onPulseirasLoaded(locais);
+                }
+        );
+        addToRequestQueue(req);
     }
 }
