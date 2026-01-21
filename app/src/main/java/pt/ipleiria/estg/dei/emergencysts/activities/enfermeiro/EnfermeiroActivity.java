@@ -21,9 +21,10 @@ public class EnfermeiroActivity extends AppCompatActivity {
     private CardView cardConsultarPaciente;
     private CardView cardHistoricoTriagem;
     private CardView cardPerfil;
-    private CardView cardEstatisticas;
     private CardView cardTotalUtilizadores;
-
+    private CardView cardIdadeMedia;
+    private CardView cardIdadeMediaSemBotao;
+    private CardView cardDashboard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,8 +35,10 @@ public class EnfermeiroActivity extends AppCompatActivity {
         cardConsultarPaciente = findViewById(R.id.cardConsultarPaciente);
         cardHistoricoTriagem = findViewById(R.id.cardHistoricoTriagem);
         cardPerfil = findViewById(R.id.cardPerfil);
-        cardEstatisticas = findViewById(R.id.cardEstatisticas);
         cardTotalUtilizadores = findViewById(R.id.cardTotalUtilizadores);
+        cardIdadeMedia = findViewById(R.id.cardIdadeMedia);
+        cardIdadeMediaSemBotao = findViewById(R.id.cardIdadeMediaSemBotao);
+        cardDashboard = findViewById(R.id.cardDashboard);
 
         cardMostrarPulseira.setOnClickListener(v ->
                 startActivity(new Intent(this, MostrarPulseirasActivity.class))
@@ -52,11 +55,17 @@ public class EnfermeiroActivity extends AppCompatActivity {
         cardPerfil.setOnClickListener(v ->
                 startActivity(new Intent(this, PerfilEnfermeiroActivity.class))
         );
-        cardEstatisticas.setOnClickListener(v ->
-                startActivity(new Intent(this, EstatisticasActivity.class))
-        );
         cardTotalUtilizadores.setOnClickListener(v ->
                 startActivity(new Intent(this, TotalUtilizadoresActivity.class))
+        );
+        cardIdadeMedia.setOnClickListener(v ->
+                startActivity(new Intent(this, IdadeMediaActivity.class))
+        );
+        cardIdadeMediaSemBotao.setOnClickListener(v ->
+                startActivity(new Intent(this, CalcularMediaSemBotaoActivity.class))
+        );
+        cardDashboard.setOnClickListener(v ->
+                startActivity(new Intent(this, DashboardActivity.class))
         );
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {

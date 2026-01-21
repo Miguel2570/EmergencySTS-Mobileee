@@ -54,12 +54,68 @@
             </LinearLayout>
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_white_rounded"
+            android:padding="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Filtro:"
+                android:textColor="#333"
+                android:textStyle="bold"
+                android:layout_marginStart="12dp"/>
+
+            <Spinner
+                android:id="@+id/spinnerFiltro"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"/>
+
+            <ImageView
+                android:id="@+id/btnOrdenar"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:src="@drawable/ic_search"
+                android:padding="6dp"
+                app:tint="#333"
+                android:clickable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"/>
+
+            <ImageView
+                android:id="@+id/btnCalendario"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:src="@android:drawable/ic_menu_my_calendar"
+                android:padding="6dp"
+                app:tint="#333"
+                android:clickable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"/>
+
+            <ImageView
+                android:id="@+id/btnLimpar"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:padding="6dp"
+                app:tint="#D32F2F"
+                android:clickable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"/>
+
+        </LinearLayout>
+
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="16dp">
+            android:layout_marginTop="12dp">
 
             <ListView
                 android:id="@+id/listViewTriagens"
