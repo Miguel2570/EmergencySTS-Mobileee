@@ -76,7 +76,6 @@ public class DashboardActivity extends AppCompatActivity {
                 tvTotalPulseiras.setText("Erro");
             }
         }, error -> {
-            tvTotalPulseiras.setText("-");
             Toast.makeText(this, "Erro Rede", Toast.LENGTH_SHORT).show();
         });
 

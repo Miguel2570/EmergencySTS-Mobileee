@@ -188,7 +188,7 @@ public class HistoricoActivity extends AppCompatActivity implements TriagemListe
             }
         }
         adapter.notifyDataSetChanged();
-        if (tvTotalTriagens != null) tvTotalTriagens.setText("Total: " + listaTriagensExibida.size());
+        if (tvTotalTriagens != null) tvTotalTriagens.setText("Total de Triagens: " + listaTriagensExibida.size());
     }
 
     @Override

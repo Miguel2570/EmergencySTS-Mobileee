@@ -35,13 +35,12 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
     private LinearLayout layoutSemPulseira;
     private boolean isPaciente;
     private TextView tvTitulo, tvSubtitulo;
+    private TextView tvTotalPulseiras;
 
-    // Enfermeiro
     private ListView listViewPulseiras;
     private PulseiraAdapter adapter;
     private final ArrayList<Pulseira> listaPulseiras = new ArrayList<>();
 
-    // Paciente
     private CardView cardPulseira;
     private TextView tvEstadoBadge, tvCodigoPulseira, tvDescricao;
 
@@ -56,6 +55,7 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
         layoutSemPulseira = findViewById(R.id.layoutSemPulseira);
         tvTitulo = findViewById(R.id.tvTitulo);
         tvSubtitulo = findViewById(R.id.tvSubtitulo);
+        tvTotalPulseiras = findViewById(R.id.tvTotalPulseiras);
 
         ImageView btnBack = findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> finish());
@@ -69,6 +69,10 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
             tvTitulo.setText("A minha Pulseira");
             tvSubtitulo.setText("Acompanhe o seu estado");
 
+            if (tvTotalPulseiras != null) {
+                tvTotalPulseiras.setVisibility(View.GONE);
+            }
+
             ListView lv = findViewById(R.id.listViewPulseiras);
             if (lv != null) lv.setVisibility(View.GONE);
 
@@ -80,11 +84,14 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
             tvTitulo.setText("Pulseiras");
             tvSubtitulo.setText("Pulseiras em espera");
 
+            if (tvTotalPulseiras != null) {
+                tvTotalPulseiras.setVisibility(View.VISIBLE);
+            }
+
             CardView cv = findViewById(R.id.cardPulseira);
             if (cv != null) cv.setVisibility(View.GONE);
         }
 
-        // MQTT: apenas garantir que o Manager existe (sem subscrever aqui)
         MqttClientManager.getInstance(this);
     }
 
@@ -93,10 +100,7 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
     protected void onResume() {
         super.onResume();
 
-        // 1. IMPORTANTE: Definir esta Activity como o Listener para receber os dados
         VolleySingleton.getInstance(this).setPulseiraListener(this);
-
-        // 2. Pedir os dados ao Singleton
         getPulseirasAPI();
 
         IntentFilter filter = new IntentFilter("MQTT_MESSAGE");
@@ -121,12 +125,10 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
             String topic = intent.getStringExtra("topic");
             if (topic == null) return;
 
-            // Atualizar dados sempre que há eventos de pulseira
             if (topic.startsWith("pulseira/")) {
                 getPulseirasAPI();
             }
 
-            // Feedback visual
             if (isPaciente && topic.startsWith("pulseira/atualizada/")) {
                 Toast.makeText(ctx, "O estado da sua pulseira foi atualizado!", Toast.LENGTH_LONG).show();
             } else if (!isPaciente && topic.startsWith("pulseira/criada/")) {
@@ -138,16 +140,11 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
     private void getPulseirasAPI() {
         progressBar.setVisibility(View.VISIBLE);
         layoutSemPulseira.setVisibility(View.GONE);
-
-        // CHAMADA LIMPA: Toda a lógica de rede e BD está agora no VolleySingleton
         VolleySingleton.getInstance(this).getPulseirasAtivasAPI(isPaciente);
     }
 
-    // --- MÉTODOS DA INTERFACE PulseiraListener ---
-
     @Override
     public void onPulseirasLoaded(ArrayList<Pulseira> pulseiras) {
-        // Este método é chamado automaticamente pelo VolleySingleton quando os dados chegam
         progressBar.setVisibility(View.GONE);
         atualizarInterface(pulseiras);
     }
@@ -161,9 +158,11 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
         }
     }
 
-    // ---------------------------------------------
-
     private void atualizarInterface(ArrayList<Pulseira> pulseiras) {
+        if (tvTotalPulseiras != null && !isPaciente) {
+            int count = (pulseiras != null) ? pulseiras.size() : 0;
+            tvTotalPulseiras.setText("Total de Pulseiras: " + count);
+        }
 
         if (pulseiras == null || pulseiras.isEmpty()) {
             layoutSemPulseira.setVisibility(View.VISIBLE);
@@ -245,10 +244,5 @@ public class MostrarPulseirasActivity extends AppCompatActivity implements Pulse
             tvEstadoBadge.setBackgroundResource(R.drawable.bg_chip_pendente);
             tvDescricao.setText("Aguarde na sala de espera pela triagem.");
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
     }
 }
